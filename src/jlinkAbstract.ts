@@ -20,8 +20,6 @@ export default abstract class JlinkAbstract {
   }
 
   abstract listRemote(): Promise<JlinkDownload[]>;
-  abstract downloadFromSegger(): void;
-  abstract downloadFromNordic(): void;
   abstract uploadToNordic(): void;
   abstract install(): void;
   abstract download(version: string): Promise<void>;

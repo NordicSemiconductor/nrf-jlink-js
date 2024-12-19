@@ -51,24 +51,24 @@ test("Parse version", async () => {
     minor: "10",
     patch: "",
   });
-  expect(parseVersion("10.10f")).toEqual({
+  expect(parseVersion("10.01f")).toEqual({
     major: "10",
-    minor: "10",
+    minor: "01",
     patch: "f",
   });
-  expect(parseVersion("10.10")).toEqual({
+  expect(parseVersion("10.01")).toEqual({
     major: "10",
-    minor: "10",
+    minor: "01",
     patch: "",
   });
-  expect(parseVersion("1010f")).toEqual({
+  expect(parseVersion("1001f")).toEqual({
     major: "10",
-    minor: "10",
+    minor: "01",
     patch: "f",
   });
-  expect(parseVersion("1010")).toEqual({
+  expect(parseVersion("1001")).toEqual({
     major: "10",
-    minor: "10",
+    minor: "01",
     patch: "",
   });
 });
