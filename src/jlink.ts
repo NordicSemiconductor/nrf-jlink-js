@@ -1,4 +1,7 @@
-import JlinkAbstract, { JlinkDownload } from "./jlinkAbstract";
+import JlinkAbstract, {
+  JlinkDownload,
+  ProgressCallback,
+} from "./jlinkAbstract";
 import JlinkBundle from "./jlinkBundle";
 import JlinkInstaller from "./jlinkInstaller";
 
@@ -56,15 +59,34 @@ export default class Jlink {
     return await this.jlink.listRemote();
   }
 
-  async download(version: string) {
-    await this.jlink.download(version);
+  async download(version: string, processUpdate?: ProgressCallback) {
+    await this.jlink.download(version, processUpdate);
   }
 
+  async downloadFromSegger(
+    version: string,
+    inputOs?: typeof process.platform,
+    inputArch?: typeof process.arch
+  ): Promise<string> {
+    return await this.jlink.downloadFromSegger(version, inputOs, inputArch);
+  }
   async install() {
+    await this.jlink.install();
+  }
+
+  async downloadAndInstall(version: string, progressUpdate: ProgressCallback) {
+    await this.download(version, progressUpdate);
     await this.jlink.install();
   }
 
   async getVersion(): Promise<string> {
     return await this.jlink.getVersion(this.jlinkPath);
+  }
+
+  async upload(
+    filePath: string,
+    progressUpdate?: ProgressCallback
+  ): Promise<string> {
+    return await this.jlink.upload(filePath, progressUpdate);
   }
 }

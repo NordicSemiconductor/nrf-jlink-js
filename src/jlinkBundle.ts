@@ -1,10 +1,13 @@
-import JlinkAbstract, { JlinkDownload } from "./jlinkAbstract";
+import JlinkAbstract, {
+  JlinkDownload,
+  ProgressCallback,
+} from "./jlinkAbstract";
 
 export default class JlinkBundle extends JlinkAbstract {
-  listRemote(): Promise<JlinkDownload[]> {
+  upload(filePath: string, progressUpdate?: ProgressCallback): Promise<string> {
     throw new Error("Method not implemented.");
   }
-  downloadFromSegger(): void {
+  listRemote(): Promise<JlinkDownload[]> {
     throw new Error("Method not implemented.");
   }
   downloadFromNordic(): void {
@@ -16,7 +19,7 @@ export default class JlinkBundle extends JlinkAbstract {
   install(): void {
     throw new Error("Method not implemented.");
   }
-  download(version: string): Promise<void> {
+  download(version: string, processUpdate?: ProgressCallback): Promise<void> {
     throw new Error("Method not implemented.");
   }
 }

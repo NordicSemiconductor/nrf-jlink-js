@@ -32,10 +32,21 @@ test("Download JLink from Nordic Artifactory", async () => {
   expect(await jlink.download(jlinkList[0].version));
 });
 
+test("Download JLink from Segger", async () => {
+  const jlink = new Jlink();
+  expect(await jlink.downloadFromSegger("v8.10i"));
+});
+
+test("Upload JLink to Nordic Artifactory", async () => {
+  const jlink = new Jlink();
+  const filePath = await jlink.downloadFromSegger("v8.10i");
+  expect(await jlink.upload(filePath, console.log)).toBeDefined();
+}, 30000);
+
 // Interaction is required
 test("Install JLink", async () => {
   const jlink = new Jlink();
   const jlinkList = await jlink.listRemote();
-  await jlink.download(jlinkList[0].version);
+  await jlink.download(jlinkList[0].version, console.log);
   expect(await jlink.install());
 }, 30000);
