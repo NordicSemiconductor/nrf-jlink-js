@@ -59,16 +59,18 @@ export default class Jlink {
     return await this.jlink.listRemote();
   }
 
-  async download(version: string, processUpdate?: ProgressCallback) {
-    await this.jlink.download(version, processUpdate);
+  async download(
+    version: string,
+    progressUpdate?: ProgressCallback
+  ): Promise<string> {
+    return await this.jlink.download(version, progressUpdate);
   }
 
   async downloadFromSegger(
     version: string,
-    inputOs?: typeof process.platform,
-    inputArch?: typeof process.arch
+    progressUpdate?: ProgressCallback
   ): Promise<string> {
-    return await this.jlink.downloadFromSegger(version, inputOs, inputArch);
+    return await this.jlink.downloadFromSegger(version, progressUpdate);
   }
   async install() {
     await this.jlink.install();

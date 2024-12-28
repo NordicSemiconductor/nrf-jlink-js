@@ -38,7 +38,7 @@ export default class JlinkInstaller extends Jlink {
   async download(
     version: string,
     progressUpdate?: ProgressCallback
-  ): Promise<void> {
+  ): Promise<string> {
     // Check if remote JLink list is empty
     if (this.remoteJlinkList.length === 0) {
       await this.listRemote();
@@ -51,7 +51,10 @@ export default class JlinkInstaller extends Jlink {
     )?.name;
     if (!fileName) {
       throw new Error(
-        `JLink version not found from remote. Given version: ${seggerVersion}`
+        `JLink version not found from remote.\n` +
+          `Expected version: ${seggerVersion}\n` +
+          `Remote provided JLink list: \n` +
+          `${this.remoteJlinkList.map((jlink) => `${jlink.version}\n`)}`
       );
     }
 
@@ -67,7 +70,7 @@ export default class JlinkInstaller extends Jlink {
         const total = progressEvent.total || headers["content-length"];
         progressUpdate &&
           progressUpdate({
-            action: "Download",
+            action: "Download from Nordic",
             step: "Download",
             stepNumber: 1,
             stepTotalNumber: 1,
@@ -97,7 +100,7 @@ export default class JlinkInstaller extends Jlink {
           console.log("🏁 Finish Download", fileUrl);
           console.log("🏁 Saved to", destinationFile);
           this.downloadedJlinkPath = destinationFile;
-          return resolve();
+          return resolve(destinationFile);
         });
       });
     });

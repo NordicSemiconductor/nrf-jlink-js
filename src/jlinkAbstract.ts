@@ -43,7 +43,7 @@ export default abstract class JlinkAbstract {
   abstract download(
     version: string,
     processUpdate?: ProgressCallback
-  ): Promise<void>;
+  ): Promise<string>;
   abstract upload(
     filePath: string,
     progressUpdate?: ProgressCallback
@@ -124,14 +124,13 @@ export default abstract class JlinkAbstract {
 
   async downloadFromSegger(
     version: string,
-    inputOs?: typeof process.platform,
-    inputArch?: typeof process.arch
+    progressUpdate?: ProgressCallback
   ): Promise<string> {
     // Convert version to file name
     const seggerVersion = convertToSeggerVersion(version);
     let osString = "";
     let extensionString = "";
-    switch (inputOs || this.os) {
+    switch (this.os) {
       case "darwin":
         osString = "MacOSX";
         extensionString = "pkg";
@@ -148,7 +147,7 @@ export default abstract class JlinkAbstract {
         throw new Error("Unsupported OS while downloading from Segger");
     }
     let archString = "";
-    switch (inputArch || this.arch) {
+    switch (this.arch) {
       case "arm64":
         archString = "arm64";
         break;
@@ -162,15 +161,31 @@ export default abstract class JlinkAbstract {
 
     // Download JLink
     const fileUrl = `${SEGGER_BASE_URL}/${fileName}`;
-    const { status, data: stream } = await axios.postForm(
+    const {
+      status,
+      data: stream,
+      headers,
+    } = await axios.postForm(
       fileUrl,
       { accept_license_agreement: "accepted" },
       {
         responseType: "stream",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        onDownloadProgress: (progressEvent) => {
+          const total = progressEvent.total || headers["content-length"];
+          progressUpdate &&
+            progressUpdate({
+              action: "Download from Segger",
+              step: "Download",
+              stepNumber: 1,
+              stepTotalNumber: 1,
+              stepPercentage: `${((progressEvent.loaded / total) * 100).toFixed(
+                2
+              )}%`,
+            });
+        },
       }
     );
-    console.log(status);
     if (status !== 200) {
       throw new Error(
         `Unable to download ${fileUrl}. Got status code ${status}.`
