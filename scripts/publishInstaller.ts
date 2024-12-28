@@ -19,10 +19,11 @@ const main = async () => {
 
   for (const { os, arch } of matrix) {
     const jlink = new Jlink("installer", os, arch);
-    const path = await jlink.downloadFromSegger(version, (progress) =>
-      console.log(`${progress.step}: ${progress.stepPercentage}`)
+    const jlinkInstallerPath = await jlink.downloadFromSegger(
+      version,
+      (progress) => console.log(`${progress.step}: ${progress.stepPercentage}`)
     );
-    await jlink.upload(path, (progress) =>
+    await jlink.upload(jlinkInstallerPath, version, (progress) =>
       console.log(`${progress.step}: ${progress.stepPercentage}`)
     );
   }

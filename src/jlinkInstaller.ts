@@ -4,8 +4,12 @@ import { mkdir } from "fs/promises";
 import os from "os";
 import path from "path";
 import sudo from "sudo-prompt";
-import Jlink, { JlinkDownload, ProgressCallback } from "./jlinkAbstract";
-import { convertToSeggerVersion } from "./common";
+import Jlink, {
+  JlinkDownload,
+  JlinkIndex,
+  ProgressCallback,
+} from "./jlinkAbstract";
+import { convertToSeggerVersion, formatDate, sortJlinkIndex } from "./common";
 
 export default class JlinkInstaller extends Jlink {
   constructor(os: typeof process.platform, arch: typeof process.arch) {
@@ -18,16 +22,7 @@ export default class JlinkInstaller extends Jlink {
   }
 
   async listRemote(): Promise<JlinkDownload[]> {
-    const indexUrl = `${this.baseUrl}/index.json`;
-    const { status, data } = await axios.get(indexUrl, {
-      headers: { "Content-Type": "application/json" },
-    });
-    if (status !== 200) {
-      throw new Error(
-        `Unable to get index file from ${indexUrl}. Got status code ${status}`
-      );
-    }
-    const jlinkDownloads = data.jlinks as JlinkDownload[];
+    const jlinkDownloads = (await this.getIndex()).jlinks;
     const jlinkList = jlinkDownloads.filter(
       (jlink) => jlink.os === this.os && jlink.arch === this.arch
     );
@@ -129,29 +124,35 @@ export default class JlinkInstaller extends Jlink {
     });
   }
 
-  upload(filePath: string, progressUpdate?: ProgressCallback): Promise<string> {
+  upload(
+    filePath: string,
+    version: string,
+    progressUpdate?: ProgressCallback
+  ): Promise<string> {
     const nordicArtifactoryToken = process.env.NORDIC_ARTIFACTORY_TOKEN;
     if (!nordicArtifactoryToken) {
       throw new Error("NORDIC_ARTIFACTORY_TOKEN environment variable not set");
     }
     return new Promise(async (resolve) => {
+      // Upload JLink file
       const fileName = path.basename(filePath);
       const fileUrl = `${this.baseUrl}/${fileName}`;
-      const fileSize = fs.statSync(filePath).size;
+      let fileSize = fs.statSync(filePath).size;
       let status;
       ({ status } = await axios.put(fileUrl, fs.createReadStream(filePath), {
         headers: {
           "X-JFrog-Art-Api": nordicArtifactoryToken,
+          "Content-Length": fileSize,
         },
         onUploadProgress(progressEvent) {
           progressUpdate &&
             progressUpdate({
               action: "Upload",
-              step: "Upload",
+              step: "Upload JLink installer",
               stepNumber: 1,
-              stepTotalNumber: 1,
+              stepTotalNumber: 3,
               stepPercentage: `${(
-                (progressEvent.loaded / fileSize) *
+                (progressEvent.loaded / (progressEvent.total || fileSize)) *
                 100
               ).toFixed(2)}%`,
             });
@@ -163,6 +164,78 @@ export default class JlinkInstaller extends Jlink {
           `Unable to upload ${fileUrl}. Got status code ${status}.`
         );
       }
+
+      // Upload backup index file
+      const jlinkIndex = await this.getIndex();
+      jlinkIndex.jlinks = jlinkIndex.jlinks.sort(sortJlinkIndex);
+      const indexName = "index.json";
+      const indexBackupName = `index-${formatDate(new Date())}.json`;
+      const indexUrl = `${this.baseUrl}/${indexName}`;
+      const indexBackupUrl = `${this.baseUrl}/${indexBackupName}`;
+      let uploadData = JSON.stringify(jlinkIndex, null, 2);
+      fileSize = uploadData.length;
+
+      ({ status } = await axios.put(indexBackupUrl, uploadData, {
+        headers: {
+          "X-JFrog-Art-Api": nordicArtifactoryToken,
+          "Content-Length": fileSize,
+        },
+        onUploadProgress(progressEvent) {
+          progressUpdate &&
+            progressUpdate({
+              action: "Upload",
+              step: "Upload backup index",
+              stepNumber: 2,
+              stepTotalNumber: 3,
+              stepPercentage: `${(
+                (progressEvent.loaded / (progressEvent.total || fileSize)) *
+                100
+              ).toFixed(2)}%`,
+            });
+        },
+      }));
+      if (status != 200 && status != 201) {
+        throw new Error(
+          `Unable to upload ${fileUrl}. Got status code ${status}.`
+        );
+      }
+
+      // Upload index file
+      const indexEntry = {
+        version: convertToSeggerVersion(version),
+        os: this.os,
+        arch: this.arch,
+        name: path.basename(filePath),
+      };
+      jlinkIndex.jlinks.push(indexEntry);
+      jlinkIndex.jlinks = jlinkIndex.jlinks.sort(sortJlinkIndex);
+      uploadData = JSON.stringify(jlinkIndex, null, 2);
+      fileSize = uploadData.length;
+      ({ status } = await axios.put(indexUrl, uploadData, {
+        headers: {
+          "X-JFrog-Art-Api": nordicArtifactoryToken,
+          "Content-Length": fileSize,
+        },
+        onUploadProgress(progressEvent) {
+          progressUpdate &&
+            progressUpdate({
+              action: "Upload",
+              step: "Upload backup index",
+              stepNumber: 3,
+              stepTotalNumber: 3,
+              stepPercentage: `${(
+                (progressEvent.loaded / (progressEvent.total || fileSize)) *
+                100
+              ).toFixed(2)}%`,
+            });
+        },
+      }));
+      if (status != 200 && status != 201) {
+        throw new Error(
+          `Unable to upload ${fileUrl}. Got status code ${status}.`
+        );
+      }
+
       return resolve(fileUrl);
     });
   }

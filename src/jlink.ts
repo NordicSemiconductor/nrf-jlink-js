@@ -87,8 +87,9 @@ export default class Jlink {
 
   async upload(
     filePath: string,
+    version: string,
     progressUpdate?: ProgressCallback
   ): Promise<string> {
-    return await this.jlink.upload(filePath, progressUpdate);
+    return await this.jlink.upload(filePath, version, progressUpdate);
   }
 }

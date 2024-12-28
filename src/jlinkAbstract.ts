@@ -8,6 +8,11 @@ import axios from "axios";
 
 const SEGGER_BASE_URL = "https://www.segger.com/downloads/jlink";
 
+export type JlinkIndex = {
+  version: number;
+  jlinks: JlinkDownload[];
+};
+
 export type JlinkDownload = {
   version: string;
   os: typeof process.platform;
@@ -39,13 +44,17 @@ export default abstract class JlinkAbstract {
   }
 
   abstract listRemote(): Promise<JlinkDownload[]>;
+
   abstract install(): void;
+
   abstract download(
     version: string,
     processUpdate?: ProgressCallback
   ): Promise<string>;
+
   abstract upload(
     filePath: string,
+    version: string,
     progressUpdate?: ProgressCallback
   ): Promise<string>;
 
@@ -207,5 +216,18 @@ export default abstract class JlinkAbstract {
         });
       });
     });
+  }
+
+  async getIndex(): Promise<JlinkIndex> {
+    const indexUrl = `${this.baseUrl}/index.json`;
+    const { status, data } = await axios.get(indexUrl, {
+      headers: { "Content-Type": "application/json" },
+    });
+    if (status !== 200) {
+      throw new Error(
+        `Unable to get index file from ${indexUrl}. Got status code ${status}.`
+      );
+    }
+    return data;
   }
 }
