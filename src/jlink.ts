@@ -33,14 +33,6 @@ export default class Jlink {
     }
   }
 
-  setJlinkPath(path: string) {
-    this.jlinkPath = path;
-  }
-
-  getJlinkPath() {
-    return this.jlinkPath;
-  }
-
   /**
    * Lists all JLink versions installed locally.
    *
@@ -91,5 +83,12 @@ export default class Jlink {
     progressUpdate?: ProgressCallback
   ): Promise<string> {
     return await this.jlink.upload(filePath, version, progressUpdate);
+  }
+  setJlinkPath(path: string) {
+    this.jlinkPath = path;
+  }
+
+  getJlinkPath() {
+    return this.jlinkPath;
   }
 }

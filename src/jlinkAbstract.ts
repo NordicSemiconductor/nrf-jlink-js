@@ -218,7 +218,7 @@ export default abstract class JlinkAbstract {
     });
   }
 
-  async getIndex(): Promise<JlinkIndex> {
+  protected async getIndex(): Promise<JlinkIndex> {
     const indexUrl = `${this.baseUrl}/index.json`;
     const { status, data } = await axios.get(indexUrl, {
       headers: { "Content-Type": "application/json" },

@@ -4,11 +4,7 @@ import { mkdir } from "fs/promises";
 import os from "os";
 import path from "path";
 import sudo from "sudo-prompt";
-import Jlink, {
-  JlinkDownload,
-  JlinkIndex,
-  ProgressCallback,
-} from "./jlinkAbstract";
+import Jlink, { JlinkDownload, ProgressCallback } from "./jlinkAbstract";
 import { convertToSeggerVersion, formatDate, sortJlinkIndex } from "./common";
 
 export default class JlinkInstaller extends Jlink {
@@ -207,6 +203,12 @@ export default class JlinkInstaller extends Jlink {
         arch: this.arch,
         name: path.basename(filePath),
       };
+      jlinkIndex.jlinks = jlinkIndex.jlinks.filter(
+        (jlink) =>
+          jlink.version !== indexEntry.version ||
+          jlink.os !== indexEntry.os ||
+          jlink.arch !== indexEntry.arch
+      );
       jlinkIndex.jlinks.push(indexEntry);
       jlinkIndex.jlinks = jlinkIndex.jlinks.sort(sortJlinkIndex);
       uploadData = JSON.stringify(jlinkIndex, null, 2);
