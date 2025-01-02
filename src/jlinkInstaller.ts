@@ -3,7 +3,7 @@ import fs from "fs";
 import { mkdir } from "fs/promises";
 import os from "os";
 import path from "path";
-import sudo from "sudo-prompt";
+import sudo from "@vscode/sudo-prompt";
 import Jlink, { JlinkDownload, ProgressCallback } from "./jlinkAbstract";
 import { convertToSeggerVersion, formatDate, sortJlinkIndex } from "./common";
 
