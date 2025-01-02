@@ -51,6 +51,13 @@ export default class Jlink {
     return await this.jlink.listRemote();
   }
 
+  /**
+   * Downloads the specified version of JLink from Nordic.
+   *
+   * @param version - The version of JLink to download.
+   * @param progressUpdate - Optional callback to track the download progress.
+   * @returns A promise that resolves to the path of the downloaded JLink.
+   */
   async download(
     version: string,
     progressUpdate?: ProgressCallback
@@ -58,6 +65,13 @@ export default class Jlink {
     return await this.jlink.download(version, progressUpdate);
   }
 
+  /**
+   * Downloads the specified version of JLink from Segger.
+   *
+   * @param version - The version of JLink to download.
+   * @param progressUpdate - Optional callback to track the download progress.
+   * @returns A promise that resolves to the path of the downloaded JLink.
+   */
   async downloadFromSegger(
     version: string,
     progressUpdate?: ProgressCallback
@@ -68,15 +82,34 @@ export default class Jlink {
     await this.jlink.install();
   }
 
+  /**
+   * Downloads the specified version of JLink from Nordic and installs it.
+   *
+   * @param version - The version of JLink to download.
+   * @param progressUpdate - Optional callback to track the download progress.
+   */
   async downloadAndInstall(version: string, progressUpdate: ProgressCallback) {
     await this.download(version, progressUpdate);
     await this.jlink.install();
   }
 
+  /**
+   * Retrieves the version of the installed JLink.
+   *
+   * @returns A promise that resolves to a string representing the JLink version.
+   */
   async getVersion(): Promise<string> {
     return await this.jlink.getVersion(this.jlinkPath);
   }
 
+  /**
+   * Uploads the specified file to Nordic's Artifactory.
+   *
+   * @param filePath - The path to the JLink file to upload.
+   * @param version - The version of the JLink being uploaded.
+   * @param progressUpdate - Optional callback to track the upload progress.
+   * @returns A promise that resolves to the URL the file was uploaded to.
+   */
   async upload(
     filePath: string,
     version: string,
@@ -84,10 +117,21 @@ export default class Jlink {
   ): Promise<string> {
     return await this.jlink.upload(filePath, version, progressUpdate);
   }
+
+  /**
+   * Sets the path to the JLink library.
+   *
+   * @param path - The path to the JLink library.
+   */
   setJlinkPath(path: string) {
     this.jlinkPath = path;
   }
 
+  /**
+   * Gets the path to the JLink library.
+   *
+   * @returns The path to the JLink library.
+   */
   getJlinkPath() {
     return this.jlinkPath;
   }
