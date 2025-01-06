@@ -10,7 +10,6 @@ export default class Jlink {
   os: typeof process.platform;
   arch: typeof process.arch;
   jlink: JlinkAbstract;
-  jlinkPath?: string;
 
   constructor(
     installType?: "installer" | "bundle",
@@ -99,7 +98,7 @@ export default class Jlink {
    * @returns A promise that resolves to a string representing the JLink version.
    */
   async getVersion(): Promise<string> {
-    return await this.jlink.getVersion(this.jlinkPath);
+    return await this.jlink.getVersion();
   }
 
   /**
@@ -124,7 +123,7 @@ export default class Jlink {
    * @param path - The path to the JLink library.
    */
   setJlinkPath(path: string) {
-    this.jlinkPath = path;
+    this.setJlinkPath(path);
   }
 
   /**
@@ -133,6 +132,6 @@ export default class Jlink {
    * @returns The path to the JLink library.
    */
   getJlinkPath() {
-    return this.jlinkPath;
+    return this.jlink.getJlinkPath();
   }
 }

@@ -37,6 +37,7 @@ export default abstract class JlinkAbstract {
   localJlinkList: string[] = [];
   downloadedJlinkPath: string = "";
   baseUrl: string = "";
+  jlinkPath: string = "";
 
   constructor(os: typeof process.platform, arch: typeof process.arch) {
     this.os = os;
@@ -229,5 +230,13 @@ export default abstract class JlinkAbstract {
       );
     }
     return data;
+  }
+
+  setJlinkPath(path: string) {
+    this.jlinkPath = path;
+  }
+
+  getJlinkPath() {
+    return this.jlinkPath;
   }
 }
