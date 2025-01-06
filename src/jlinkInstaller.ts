@@ -6,6 +6,7 @@ import path from "path";
 import sudo from "@vscode/sudo-prompt";
 import Jlink, { JlinkDownload, ProgressCallback } from "./jlinkAbstract";
 import { convertToSeggerVersion, formatDate, sortJlinkIndex } from "./common";
+import { exec } from "child_process";
 
 export default class JlinkInstaller extends Jlink {
   constructor(os: typeof process.platform, arch: typeof process.arch) {
@@ -102,9 +103,63 @@ export default class JlinkInstaller extends Jlink {
       throw new Error("JLink not downloaded, call download first");
     }
 
+    if (this.os === "darwin") {
+      return this.installMac();
+    }
+
+    if (this.os === "linux") {
+      return this.installLinux();
+    }
+
+    if (this.os === "win32") {
+      return this.installWindows();
+    }
+
+    throw new Error("Unsupported OS while installing on: " + this.os);
+  }
+
+  installMac(): Promise<void> {
     return new Promise((resolve) => {
       sudo.exec(
         `installer -pkg "${this.downloadedJlinkPath}" -target /`,
+        (error, stdout, stderr) => {
+          if (error) {
+            console.log(error);
+          }
+          if (stderr) {
+            console.log(stderr);
+          }
+          if (stdout && stdout.includes("successful")) {
+            return resolve();
+          }
+        }
+      );
+    });
+  }
+
+  installLinux(): Promise<void> {
+    return new Promise((resolve) => {
+      sudo.exec(
+        `installer -pkg "${this.downloadedJlinkPath}" -target /`,
+        (error, stdout, stderr) => {
+          if (error) {
+            console.log(error);
+          }
+          if (stderr) {
+            console.log(stderr);
+          }
+          if (stdout && stdout.includes("successful")) {
+            return resolve();
+          }
+        }
+      );
+    });
+  }
+
+  installWindows(): Promise<void> {
+    return new Promise((resolve) => {
+      exec(
+        `"${this.downloadedJlinkPath}" -Silent=1 -InstUSBDriver=1 -InstAllUsers=0`,
         (error, stdout, stderr) => {
           if (error) {
             console.log(error);
