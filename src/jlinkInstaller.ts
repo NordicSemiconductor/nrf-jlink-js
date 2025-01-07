@@ -99,78 +99,83 @@ export default class JlinkInstaller extends Jlink {
     });
   }
 
-  install(): Promise<void> {
-    if (!this.downloadedJlinkPath) {
-      throw new Error("JLink not downloaded, call download first");
+  async downloadFromSegger(
+    version: string,
+    progressUpdate?: ProgressCallback
+  ): Promise<string> {
+    // Convert version to file name
+    const seggerVersion = convertToSeggerVersion(version);
+    let osString = "";
+    let extensionString = "";
+    switch (this.os) {
+      case "darwin":
+        osString = "MacOSX";
+        extensionString = "pkg";
+        break;
+      case "linux":
+        osString = "Linux";
+        extensionString = "deb";
+        break;
+      case "win32":
+        osString = "Windows";
+        extensionString = "exe";
+        break;
+      default:
+        throw new Error("Unsupported OS while downloading from Segger");
     }
-
-    if (this.os === "darwin") {
-      return this.installMac();
+    let archString = "";
+    switch (this.arch) {
+      case "arm64":
+        archString = "arm64";
+        break;
+      case "x64":
+        archString = "x86_64";
+        break;
+      default:
+        throw new Error("Unsupported ARCH while downloading from Segger");
     }
+    const fileName = `JLink_${osString}_${seggerVersion}_${archString}.${extensionString}`;
 
-    if (this.os === "linux") {
-      return this.installLinux();
-    }
-
-    if (this.os === "win32") {
-      return this.installWindows();
-    }
-
-    throw new Error("Unsupported OS while installing on: " + this.os);
+    return this.downloadFileFromSegger(fileName, progressUpdate);
   }
 
-  installMac(): Promise<void> {
+  protected installMac(): Promise<void> {
     const installCmd = `installer -pkg "${this.downloadedJlinkPath}" -target /`;
-    console.log(`Start to install on macOS with command: ${installCmd}`);
+    return this.installOnPlatform(installCmd, "macOS");
+  }
+
+  protected installLinux(): Promise<void> {
+    const installCmd = `dpkg -i ${this.downloadedJlinkPath}`;
+    return this.installOnPlatform(installCmd, "Linux");
+  }
+
+  protected installWindows(): Promise<void> {
+    const installCmd = `"${this.downloadedJlinkPath}"`;
+    return this.installOnPlatform(installCmd, "Windows");
+  }
+
+  installOnPlatform(
+    installCmd: string,
+    platformDisplayName: string
+  ): Promise<void> {
+    console.log(
+      `Start to install on ${platformDisplayName} with command: ${installCmd}`
+    );
 
     return new Promise((resolve) => {
-      sudo.exec(
-        `installer -pkg "${this.downloadedJlinkPath}" -target /`,
-        (error, stdout, stderr) => {
-          if (error) {
-            console.log(error);
-          }
-          if (stderr) {
-            console.log(stderr);
-          }
-          if (stdout && stdout.includes("successful")) {
-            console.log("Installed successfully");
-            return resolve();
-          }
+      sudo.exec(installCmd, (error, stdout, stderr) => {
+        if (error) {
+          console.log(error);
         }
-      );
-    });
-  }
-
-  installLinux(): Promise<void> {
-    const installCmd = `installer -pkg "${this.downloadedJlinkPath}" -target /`;
-    console.log(`Start to install on macOS with command: ${installCmd}`);
-
-    return new Promise((resolve) => {
-      sudo.exec(
-        `installer -pkg "${this.downloadedJlinkPath}" -target /`,
-        (error, stdout, stderr) => {
-          if (error) {
-            console.log(error);
-          }
-          if (stderr) {
-            console.log(stderr);
-          }
-          if (stdout && stdout.includes("successful")) {
-            console.log("Installed successfully");
-            return resolve();
-          }
+        if (stderr) {
+          console.log(stderr);
         }
-      );
+        if (stdout && stdout.includes("successful")) {
+          console.log("Installed successfully");
+          return resolve();
+        }
+      });
     });
-  }
-
-  installWindows(): Promise<void> {
-    const installCmd = `"${this.downloadedJlinkPath}" -Silent=1 -InstUSBDriver=1 -InstAllUsers=0`;
-    console.log(`Start to install on Windows with command: ${installCmd}`);
-
-    execSync(installCmd);
-    return Promise.resolve();
   }
 
   upload(
