@@ -49,7 +49,31 @@ export default abstract class JlinkAbstract {
 
   abstract listRemote(): Promise<JlinkDownload[]>;
 
-  abstract install(): void;
+  install(): Promise<void> {
+    if (!this.downloadedJlinkPath) {
+      throw new Error("JLink not downloaded, call download first");
+    }
+
+    if (this.os === "darwin") {
+      return this.installMac();
+    }
+
+    if (this.os === "linux") {
+      return this.installLinux();
+    }
+
+    if (this.os === "win32") {
+      return this.installWindows();
+    }
+
+    throw new Error("Unsupported OS while installing on: " + this.os);
+  }
+
+  protected abstract installMac(): Promise<void>;
+
+  protected abstract installLinux(): Promise<void>;
+
+  protected abstract installWindows(): Promise<void>;
 
   abstract download(
     version: string,
@@ -261,45 +285,18 @@ export default abstract class JlinkAbstract {
     });
   }
 
-  async downloadFromSegger(
+  abstract downloadFromSegger(
     version: string,
     progressUpdate?: ProgressCallback
-  ): Promise<string> {
-    // Convert version to file name
-    const seggerVersion = convertToSeggerVersion(version);
-    let osString = "";
-    let extensionString = "";
-    switch (this.os) {
-      case "darwin":
-        osString = "MacOSX";
-        extensionString = "pkg";
-        break;
-      case "linux":
-        osString = "Linux";
-        extensionString = "deb";
-        break;
-      case "win32":
-        osString = "Windows";
-        extensionString = "exe";
-        break;
-      default:
-        throw new Error("Unsupported OS while downloading from Segger");
-    }
-    let archString = "";
-    switch (this.arch) {
-      case "arm64":
-        archString = "arm64";
-        break;
-      case "x64":
-        archString = "x86_64";
-        break;
-      default:
-        throw new Error("Unsupported ARCH while downloading from Segger");
-    }
-    const fileName = `JLink_${osString}_${seggerVersion}_${archString}.${extensionString}`;
+  ): Promise<string>;
 
+  protected async downloadFileFromSegger(
+    fileName: string,
+    progressUpdate?: ProgressCallback
+  ): Promise<string> {
     // Download JLink
     const fileUrl = `${SEGGER_BASE_URL}/${fileName}`;
+    console.log("Start downloading from", fileUrl);
     const {
       status,
       data: stream,
@@ -340,7 +337,7 @@ export default abstract class JlinkAbstract {
       stream.on("error", reject);
       stream.on("end", () => {
         file.end(() => {
-          console.log("🏁 Finish Download", fileUrl);
+          console.log("🏁 Finish downloading from", fileUrl);
           console.log("🏁 Saved to", destinationFile);
           return resolve(destinationFile);
         });

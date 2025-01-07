@@ -5,8 +5,7 @@ import os from "os";
 import path from "path";
 import sudo from "@vscode/sudo-prompt";
 import Jlink, { JlinkDownload, ProgressCallback } from "./jlinkAbstract";
-import { convertToSeggerVersion, formatDate, sortJlinkIndex } from "./common";
-import { execSync } from "child_process";
+import { convertToSeggerVersion } from "./common";
 
 export default class JlinkInstaller extends Jlink {
   constructor(os: typeof process.platform, arch: typeof process.arch) {
@@ -154,7 +153,7 @@ export default class JlinkInstaller extends Jlink {
     return this.installOnPlatform(installCmd, "Windows");
   }
 
-  installOnPlatform(
+  protected installOnPlatform(
     installCmd: string,
     platformDisplayName: string
   ): Promise<void> {
