@@ -6,7 +6,7 @@ import path from "path";
 import sudo from "@vscode/sudo-prompt";
 import Jlink, { JlinkDownload, ProgressCallback } from "./jlinkAbstract";
 import { convertToSeggerVersion, formatDate, sortJlinkIndex } from "./common";
-import { exec } from "child_process";
+import { execSync } from "child_process";
 
 export default class JlinkInstaller extends Jlink {
   constructor(os: typeof process.platform, arch: typeof process.arch) {
@@ -119,6 +119,9 @@ export default class JlinkInstaller extends Jlink {
   }
 
   installMac(): Promise<void> {
+    const installCmd = `installer -pkg "${this.downloadedJlinkPath}" -target /`;
+    console.log(`Start to install on macOS with command: ${installCmd}`);
+
     return new Promise((resolve) => {
       sudo.exec(
         `installer -pkg "${this.downloadedJlinkPath}" -target /`,
@@ -130,6 +133,7 @@ export default class JlinkInstaller extends Jlink {
             console.log(stderr);
           }
           if (stdout && stdout.includes("successful")) {
+            console.log("Installed successfully");
             return resolve();
           }
         }
@@ -138,6 +142,9 @@ export default class JlinkInstaller extends Jlink {
   }
 
   installLinux(): Promise<void> {
+    const installCmd = `installer -pkg "${this.downloadedJlinkPath}" -target /`;
+    console.log(`Start to install on macOS with command: ${installCmd}`);
+
     return new Promise((resolve) => {
       sudo.exec(
         `installer -pkg "${this.downloadedJlinkPath}" -target /`,
@@ -149,6 +156,7 @@ export default class JlinkInstaller extends Jlink {
             console.log(stderr);
           }
           if (stdout && stdout.includes("successful")) {
+            console.log("Installed successfully");
             return resolve();
           }
         }
@@ -157,22 +165,11 @@ export default class JlinkInstaller extends Jlink {
   }
 
   installWindows(): Promise<void> {
-    return new Promise((resolve) => {
-      exec(
-        `"${this.downloadedJlinkPath}" -Silent=1 -InstUSBDriver=1 -InstAllUsers=0`,
-        (error, stdout, stderr) => {
-          if (error) {
-            console.log(error);
-          }
-          if (stderr) {
-            console.log(stderr);
-          }
-          if (stdout && stdout.includes("successful")) {
-            return resolve();
-          }
-        }
-      );
-    });
+    const installCmd = `"${this.downloadedJlinkPath}" -Silent=1 -InstUSBDriver=1 -InstAllUsers=0`;
+    console.log(`Start to install on Windows with command: ${installCmd}`);
+
+    execSync(installCmd);
+    return Promise.resolve();
   }
 
   upload(

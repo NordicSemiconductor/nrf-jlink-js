@@ -123,7 +123,7 @@ export default class Jlink {
    * @param path - The path to the JLink library.
    */
   setJlinkPath(path: string) {
-    this.setJlinkPath(path);
+    this.jlink.setJlinkPath(path);
   }
 
   /**
