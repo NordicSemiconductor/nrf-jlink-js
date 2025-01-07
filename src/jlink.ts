@@ -1,12 +1,13 @@
 import JlinkAbstract, {
   JlinkDownload,
+  JlinkInstallType,
   ProgressCallback,
 } from "./jlinkAbstract";
 import JlinkBundle from "./jlinkBundle";
 import JlinkInstaller from "./jlinkInstaller";
 
 export default class Jlink {
-  installType: "installer" | "bundle";
+  installType: JlinkInstallType;
   os: typeof process.platform;
   arch: typeof process.arch;
   jlink: JlinkAbstract;

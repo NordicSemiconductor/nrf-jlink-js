@@ -3,7 +3,7 @@ import fs from "fs";
 import { mkdir } from "fs/promises";
 import os from "os";
 import path from "path";
-import { convertToSeggerVersion } from "./common";
+import { convertToSeggerVersion, formatDate, sortJlinkIndex } from "./common";
 import axios from "axios";
 
 const SEGGER_BASE_URL = "https://www.segger.com/downloads/jlink";
@@ -13,11 +13,14 @@ export type JlinkIndex = {
   jlinks: JlinkDownload[];
 };
 
+export type JlinkInstallType = "installer" | "bundle";
+
 export type JlinkDownload = {
   version: string;
   os: typeof process.platform;
   arch: typeof process.arch;
   name: string;
+  installType: JlinkInstallType;
 };
 
 export type ProgressStep = {
@@ -58,6 +61,132 @@ export default abstract class JlinkAbstract {
     version: string,
     progressUpdate?: ProgressCallback
   ): Promise<string>;
+
+  uploadToNordic(
+    filePath: string,
+    version: string,
+    installType: JlinkInstallType,
+    progressUpdate?: ProgressCallback
+  ): Promise<string> {
+    const nordicArtifactoryToken = process.env.NORDIC_ARTIFACTORY_TOKEN;
+    if (!nordicArtifactoryToken) {
+      throw new Error("NORDIC_ARTIFACTORY_TOKEN environment variable not set");
+    }
+
+    return new Promise(async (resolve) => {
+      // Upload JLink file
+      const fileName = path.basename(filePath);
+      const targetUrl = `${this.baseUrl}/${fileName}`;
+      let fileSize = fs.statSync(filePath).size;
+      let status;
+      ({ status } = await axios.put(targetUrl, fs.createReadStream(filePath), {
+        headers: {
+          "X-JFrog-Art-Api": nordicArtifactoryToken,
+          "Content-Length": fileSize,
+        },
+        onUploadProgress(progressEvent) {
+          progressUpdate &&
+            progressUpdate({
+              action: "Upload",
+              step: `Upload JLink ${installType}`,
+              stepNumber: 1,
+              stepTotalNumber: 3,
+              stepPercentage: `${(
+                (progressEvent.loaded / (progressEvent.total || fileSize)) *
+                100
+              ).toFixed(2)}%`,
+            });
+        },
+      }));
+
+      if (status != 200 && status != 201) {
+        throw new Error(
+          `Unable to upload ${targetUrl}. Got status code ${status}.`
+        );
+      }
+
+      // Upload backup index file
+      const jlinkIndex = await this.getIndex();
+      jlinkIndex.jlinks = jlinkIndex.jlinks.sort(sortJlinkIndex) || [];
+      const indexName = "index.json";
+      const indexBackupName = `index-${formatDate(new Date())}.json`;
+      const indexUrl = `${this.baseUrl}/${indexName}`;
+      const indexBackupUrl = `${this.baseUrl}/index-backup/${indexBackupName}`;
+      let uploadData = JSON.stringify(jlinkIndex, null, 2);
+      fileSize = uploadData.length;
+
+      ({ status } = await axios.put(indexBackupUrl, uploadData, {
+        headers: {
+          "X-JFrog-Art-Api": nordicArtifactoryToken,
+          "Content-Length": fileSize,
+        },
+        onUploadProgress(progressEvent) {
+          progressUpdate &&
+            progressUpdate({
+              action: "Upload",
+              step: "Upload backup index",
+              stepNumber: 2,
+              stepTotalNumber: 3,
+              stepPercentage: `${(
+                (progressEvent.loaded / (progressEvent.total || fileSize)) *
+                100
+              ).toFixed(2)}%`,
+            });
+        },
+      }));
+      if (status != 200 && status != 201) {
+        throw new Error(
+          `Unable to upload ${targetUrl}. Got status code ${status}.`
+        );
+      }
+
+      // Upload index file
+      const indexEntry = {
+        version: convertToSeggerVersion(version),
+        os: this.os,
+        arch: this.arch,
+        name: path.basename(filePath),
+        installType,
+      };
+      jlinkIndex.jlinks = jlinkIndex.jlinks.filter(
+        (jlink) =>
+          jlink.version !== indexEntry.version ||
+          jlink.os !== indexEntry.os ||
+          jlink.arch !== indexEntry.arch ||
+          jlink.installType !== indexEntry.installType
+      );
+      jlinkIndex.jlinks.push(indexEntry);
+      jlinkIndex.jlinks = jlinkIndex.jlinks.sort(sortJlinkIndex);
+      uploadData = JSON.stringify(jlinkIndex, null, 2);
+      fileSize = uploadData.length;
+      ({ status } = await axios.put(indexUrl, uploadData, {
+        headers: {
+          "X-JFrog-Art-Api": nordicArtifactoryToken,
+          "Content-Length": fileSize,
+        },
+        onUploadProgress(progressEvent) {
+          progressUpdate &&
+            progressUpdate({
+              action: "Upload",
+              step: "Upload backup index",
+              stepNumber: 3,
+              stepTotalNumber: 3,
+              stepPercentage: `${(
+                (progressEvent.loaded / (progressEvent.total || fileSize)) *
+                100
+              ).toFixed(2)}%`,
+            });
+        },
+      }));
+      if (status != 200 && status != 201) {
+        throw new Error(
+          `Unable to upload ${targetUrl}. Got status code ${status}.`
+        );
+      }
+
+      return resolve(targetUrl);
+    });
+  }
 
   listLocalInstalled(): string[] {
     if (this.os === "darwin") {
