@@ -24,6 +24,7 @@
   "scripts": {
     "build": "rollup -c",
     "publish-installer": "ts-node ./scripts/publishInstaller",
+    "publish-bundle": "ts-node ./scripts/publishBundle",
     "test": "jest",
     "test-gui": "ts-node ./scripts/testExamples"
   },

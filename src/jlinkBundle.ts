@@ -1,4 +1,5 @@
 import os from "os";
+import fs from "fs";
 import { create } from "tar";
 import sudo from "@vscode/sudo-prompt";
 import JlinkAbstract, {
@@ -41,7 +42,7 @@ export default class JlinkBundle extends JlinkAbstract {
         break;
       case "linux":
         osString = "Linux";
-        extensionString = "pkg";
+        extensionString = "tgz";
         break;
       case "win32":
         osString = "Windows";
@@ -72,7 +73,7 @@ export default class JlinkBundle extends JlinkAbstract {
     throw new Error("Method not implemented.");
   }
 
-  installAndPack(version: string, installerPath?: string): Promise<string> {
+  installAndPack(version: string, installerPath: string): Promise<string> {
     if (this.os === "darwin") {
       if (!installerPath) {
         throw new Error(
@@ -83,15 +84,15 @@ export default class JlinkBundle extends JlinkAbstract {
       return this.installMacAndPack(version, installerPath);
     }
 
-    // if (this.os === "linux") {
-    //   return this.installLinux();
-    // }
+    if (this.os === "linux") {
+      return Promise.resolve(installerPath);
+    }
 
-    // if (this.os === "win32") {
-    //   return this.installWindows();
-    // }
+    if (this.os === "win32") {
+      return Promise.resolve(installerPath);
+    }
 
-    // throw new Error("Unsupported OS while installing on: " + this.os);
+    throw new Error("Unsupported OS while installing on: " + this.os);
   }
 
   async installMacAndPack(
@@ -116,15 +117,17 @@ export default class JlinkBundle extends JlinkAbstract {
     });
 
     const tarballFile = path.join(os.tmpdir(), this.bundleName);
-    const sourceFolder = "/Applications/SEGGER/";
+    const sourceFolder = `/Applications/SEGGER/JLink_${convertToSeggerVersion(
+      version
+    )}`;
     await create(
       {
         cwd: sourceFolder,
         gzip: true,
         file: tarballFile,
       },
-      [`JLink_${convertToSeggerVersion(version)}`]
-    ).then((_) => {
+      fs.readdirSync(sourceFolder)
+    ).then(() => {
       "Tarball has been created.";
     });
 
