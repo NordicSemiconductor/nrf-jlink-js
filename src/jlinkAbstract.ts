@@ -45,13 +45,19 @@ export default abstract class JlinkAbstract {
   constructor(os: typeof process.platform, arch: typeof process.arch) {
     this.os = os;
     this.arch = arch;
+    this.jlinkPath = process.env["NRF_JLINK_PATH"] || "";
   }
 
   abstract listRemote(): Promise<JlinkDownload[]>;
 
-  install(): Promise<void> {
+  install(installPath?: string): Promise<void> {
     if (!this.downloadedJlinkPath) {
       throw new Error("JLink not downloaded, call download first");
+    }
+
+    if (installPath) {
+      this.setJlinkPath(installPath);
+      console.log(`JLink installation path is set to ${installPath}`);
     }
 
     if (this.os === "darwin") {
@@ -74,11 +80,6 @@ export default abstract class JlinkAbstract {
   protected abstract installLinux(): Promise<void>;
 
   protected abstract installWindows(): Promise<void>;
-
-  abstract download(
-    version: string,
-    processUpdate?: ProgressCallback
-  ): Promise<string>;
 
   abstract upload(
     filePath: string,
@@ -285,6 +286,77 @@ export default abstract class JlinkAbstract {
     });
   }
 
+  async download(
+    version: string,
+    progressUpdate?: ProgressCallback
+  ): Promise<string> {
+    // Check if remote JLink list is empty
+    if (this.remoteJlinkList.length === 0) {
+      await this.listRemote();
+    }
+
+    // Find JLink version
+    const seggerVersion = convertToSeggerVersion(version);
+    const fileName = this.remoteJlinkList.find(
+      (jlink) => jlink.version === seggerVersion
+    )?.name;
+    if (!fileName) {
+      throw new Error(
+        `JLink version not found from remote.\n` +
+          `Expected version: ${seggerVersion}.\n` +
+          `Remote provided JLink list: \n` +
+          `${this.remoteJlinkList.map((jlink) => `${jlink.version}\n`)}`
+      );
+    }
+
+    // Download JLink
+    const fileUrl = `${this.baseUrl}/${fileName}`;
+    const {
+      status,
+      data: stream,
+      headers,
+    } = await axios.get(fileUrl, {
+      responseType: "stream",
+      onDownloadProgress: (progressEvent) => {
+        const total = progressEvent.total || headers["content-length"];
+        progressUpdate &&
+          progressUpdate({
+            action: "Download from Nordic",
+            step: "Download",
+            stepNumber: 1,
+            stepTotalNumber: 1,
+            stepPercentage: `${((progressEvent.loaded / total) * 100).toFixed(
+              2
+            )}%`,
+          });
+      },
+    });
+
+    if (status !== 200) {
+      throw new Error(
+        `Unable to download ${fileUrl}. Got status code ${status}.`
+      );
+    }
+
+    // Save JLink
+    const destinationFile = path.join(os.tmpdir(), fileName);
+    await mkdir(path.dirname(destinationFile), { recursive: true });
+
+    return new Promise((resolve, reject) => {
+      const file = fs.createWriteStream(destinationFile);
+      stream.pipe(file);
+      stream.on("error", reject);
+      stream.on("end", () => {
+        file.end(() => {
+          console.log("🏁 Finished downloading from", fileUrl);
+          console.log("🏁 Saved to", destinationFile);
+          this.downloadedJlinkPath = destinationFile;
+          return resolve(destinationFile);
+        });
+      });
+    });
+  }
+
   abstract downloadFromSegger(
     version: string,
     progressUpdate?: ProgressCallback
@@ -337,7 +409,7 @@ export default abstract class JlinkAbstract {
       stream.on("error", reject);
       stream.on("end", () => {
         file.end(() => {
-          console.log("🏁 Finish downloading from", fileUrl);
+          console.log("🏁 Finished downloading from", fileUrl);
           console.log("🏁 Saved to", destinationFile);
           return resolve(destinationFile);
         });
@@ -359,6 +431,7 @@ export default abstract class JlinkAbstract {
   }
 
   setJlinkPath(path: string) {
+    process.env["NRF_JLINK_PATH"] = path;
     this.jlinkPath = path;
   }
 

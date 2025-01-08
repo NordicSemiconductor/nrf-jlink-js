@@ -1,6 +1,7 @@
+import untildify from "untildify";
 import os from "os";
 import fs from "fs";
-import { create } from "tar";
+import { create, extract } from "tar";
 import sudo from "@vscode/sudo-prompt";
 import JlinkAbstract, {
   JlinkDownload,
@@ -20,11 +21,16 @@ export default class JlinkBundle extends JlinkAbstract {
     this.bundleName = "";
   }
 
-  listRemote(): Promise<JlinkDownload[]> {
-    throw new Error("Method not implemented.");
-  }
-  download(version: string, processUpdate?: ProgressCallback): Promise<string> {
-    throw new Error("Method not implemented.");
+  async listRemote(): Promise<JlinkDownload[]> {
+    const jlinkDownloads = (await this.getIndex()).jlinks;
+    const jlinkList = jlinkDownloads.filter(
+      (jlink) =>
+        jlink.os === this.os &&
+        jlink.arch === this.arch &&
+        jlink.installType === "bundle"
+    );
+    this.remoteJlinkList = jlinkList;
+    return jlinkList;
   }
 
   async downloadFromSegger(
@@ -69,8 +75,24 @@ export default class JlinkBundle extends JlinkAbstract {
     return this.downloadFileFromSegger(fileName, progressUpdate);
   }
 
-  protected installMac(): Promise<void> {
-    throw new Error("Method not implemented.");
+  protected async installMac(): Promise<void> {
+    if (!this.jlinkPath) {
+      throw new Error(
+        "JLink path not provided, please specify a path for unpacking JLink bundle on macOS"
+      );
+    }
+
+    const targetPath = untildify(this.jlinkPath);
+    if (!fs.existsSync(targetPath)) {
+      fs.mkdirSync(targetPath, { recursive: true });
+    }
+    await extract({
+      cwd: targetPath,
+      gzip: true,
+      file: this.downloadedJlinkPath,
+    }).then(() => {
+      console.log(`Tarball has been dumped in ${targetPath}.`);
+    });
   }
 
   installAndPack(version: string, installerPath: string): Promise<string> {
@@ -128,7 +150,7 @@ export default class JlinkBundle extends JlinkAbstract {
       },
       fs.readdirSync(sourceFolder)
     ).then(() => {
-      "Tarball has been created.";
+      console.log("Tarball has been created.");
     });
 
     return tarballFile;

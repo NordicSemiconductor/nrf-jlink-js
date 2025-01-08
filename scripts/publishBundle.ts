@@ -13,9 +13,9 @@ const main = async () => {
   console.log(`Publishing JLink installer for ${version}`);
 
   const matrix: { os: typeof process.platform; arch: typeof process.arch }[] = [
-    // { os: "win32", arch: "x64" },
-    // { os: "linux", arch: "x64" },
-    // { os: "darwin", arch: "x64" },
+    { os: "win32", arch: "x64" },
+    { os: "linux", arch: "x64" },
+    { os: "darwin", arch: "x64" },
     { os: "darwin", arch: "arm64" },
   ];
 

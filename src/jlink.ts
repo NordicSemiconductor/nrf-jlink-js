@@ -78,8 +78,8 @@ export default class Jlink {
   ): Promise<string> {
     return await this.jlink.downloadFromSegger(version, progressUpdate);
   }
-  async install() {
-    await this.jlink.install();
+  async install(installPath?: string) {
+    await this.jlink.install(installPath);
   }
 
   /**
@@ -120,10 +120,12 @@ export default class Jlink {
 
   /**
    * Sets the path to the JLink library.
+   * Also sets the path in system environment variable `NRF_JLINK_PATH`.
    *
    * @param path - The path to the JLink library.
    */
   setJlinkPath(path: string) {
+    process.env["NRF_JLINK_PATH"] = path;
     this.jlink.setJlinkPath(path);
   }
 

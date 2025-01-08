@@ -19,7 +19,8 @@
     "@vscode/sudo-prompt": "^9.3.1",
     "axios": "^1.7.9",
     "install": "^0.13.0",
-    "tar": "^7.4.3"
+    "tar": "^7.4.3",
+    "untildify": "^5.0.0"
   },
   "scripts": {
     "build": "rollup -c",
