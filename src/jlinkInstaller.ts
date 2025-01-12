@@ -1,8 +1,3 @@
-import axios from "axios";
-import fs from "fs";
-import { mkdir } from "fs/promises";
-import os from "os";
-import path from "path";
 import sudo from "@vscode/sudo-prompt";
 import Jlink, { JlinkDownload, ProgressCallback } from "./jlinkAbstract";
 import { convertToSeggerVersion } from "./common";
