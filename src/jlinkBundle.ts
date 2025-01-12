@@ -75,26 +75,6 @@ export default class JlinkBundle extends JlinkAbstract {
     return this.downloadFileFromSegger(fileName, progressUpdate);
   }
 
-  protected async installMac(): Promise<void> {
-    if (!this.jlinkPath) {
-      throw new Error(
-        "JLink path not provided, please specify a path for unpacking JLink bundle on macOS"
-      );
-    }
-
-    const targetPath = untildify(this.jlinkPath);
-    if (!fs.existsSync(targetPath)) {
-      fs.mkdirSync(targetPath, { recursive: true });
-    }
-    await extract({
-      cwd: targetPath,
-      gzip: true,
-      file: this.downloadedJlinkPath,
-    }).then(() => {
-      console.log(`Tarball has been dumped in ${targetPath}.`);
-    });
-  }
-
   installAndPack(version: string, installerPath: string): Promise<string> {
     if (this.os === "darwin") {
       if (!installerPath) {
@@ -156,8 +136,36 @@ export default class JlinkBundle extends JlinkAbstract {
     return tarballFile;
   }
 
-  protected installLinux(): Promise<void> {
-    throw new Error("Method not implemented.");
+  protected async unpack(): Promise<void> {
+    const targetPath = untildify(this.jlinkPath);
+    if (!fs.existsSync(targetPath)) {
+      fs.mkdirSync(targetPath, { recursive: true });
+    }
+    await extract({
+      cwd: targetPath,
+      gzip: true,
+      file: this.downloadedJlinkPath,
+    }).then(() => {
+      console.log(`Tarball has been dumped in ${targetPath}.`);
+    });
+  }
+
+  protected async installMac(): Promise<void> {
+    if (!this.jlinkPath) {
+      throw new Error(
+        "JLink path not provided, please specify a path for unpacking JLink bundle on macOS"
+      );
+    }
+    this.unpack();
+  }
+
+  protected async installLinux(): Promise<void> {
+    if (!this.jlinkPath) {
+      throw new Error(
+        "JLink path not provided, please specify a path for unpacking JLink bundle on Linux"
+      );
+    }
+    this.unpack();
   }
 
   protected installWindows(): Promise<void> {
