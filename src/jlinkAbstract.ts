@@ -243,9 +243,16 @@ export default abstract class JlinkAbstract {
   }
 
   listLocalInstalledLinux() {
-    // TODO
-    return [];
+    const seggerPath = "/opt/SEGGER/";
+    const installedJlink: string[] = [];
+    fs.readdirSync(seggerPath).forEach((file) => {
+      if (file.startsWith("JLink")) {
+        installedJlink.push(seggerPath + file);
+      }
+    });
+    return installedJlink;
   }
+
   listLocalInstalledWindows() {
     // TODO
     return [];
