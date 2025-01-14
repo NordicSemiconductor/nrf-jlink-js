@@ -1,3 +1,4 @@
+import { convertToSeggerVersion } from "./common";
 import JlinkAbstract, {
   JlinkDownload,
   JlinkInstallType,
@@ -136,5 +137,23 @@ export default class Jlink {
    */
   getJlinkPath() {
     return this.jlink.getJlinkPath();
+  }
+
+  /**
+   * Sets the version to the JLink library to use.
+   *
+   * @param version - The version to the JLink library to use.
+   */
+  setJlinkVersion(version: string) {
+    this.jlink.setJlinkVersion(version);
+  }
+
+  /**
+   * Gets the version to the JLink library in use.
+   *
+   * @returns The version to the JLink library in use.
+   */
+  getJlinkVersion() {
+    return this.jlink.getJlinkVersion();
   }
 }

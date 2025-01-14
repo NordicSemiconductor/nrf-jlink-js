@@ -3,4 +3,4 @@ import Jlink from "../src/index";
 
 process.env.NRF_JLINK_PATH = "~/.nrfconnect-apps/jlink";
 const jlink = new Jlink("bundle");
-await jlink.downloadAndInstall("v810f", console.log);
+await jlink.downloadAndInstall("v810c", console.log);

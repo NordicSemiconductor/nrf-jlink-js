@@ -41,11 +41,13 @@ export default abstract class JlinkAbstract {
   downloadedJlinkPath: string = "";
   baseUrl: string = "";
   jlinkPath: string = "";
+  jlinkVersion: string = "";
 
   constructor(os: typeof process.platform, arch: typeof process.arch) {
     this.os = os;
     this.arch = arch;
     this.jlinkPath = process.env["NRF_JLINK_PATH"] || "";
+    this.jlinkVersion = process.env["NRF_JLINK_VERSION"] || "";
   }
 
   abstract listRemote(): Promise<JlinkDownload[]>;
@@ -249,16 +251,18 @@ export default abstract class JlinkAbstract {
     return [];
   }
 
-  getVersion(jlinkPath?: string): Promise<string> {
+  getVersion(): Promise<string> {
     let PATH = process.env.PATH;
-    if (jlinkPath) {
-      console.log(`JLink path set to ${jlinkPath}`);
-      PATH = `${jlinkPath}:${process.env.PATH}`;
+    if (fs.existsSync(this.jlinkPath)) {
+      console.log(`JLink path set to ${this.jlinkPath}`);
+      PATH = `${this.jlinkPath}:${process.env.PATH}`;
     } else {
-      console.log("JLink path not set, will use the global JLink");
+      console.log(
+        "JLink path not set or not valid, use the global JLink instead"
+      );
     }
     return new Promise((resolve) => {
-      const jlinkExeCmd = spawn("JLinkExe", ["-NoGUI", "1"], {
+      const jlinkExeCmd = spawn(`JLinkExe`, ["-NoGUI", "1"], {
         shell: true,
         env: {
           ...process.env,
@@ -305,7 +309,9 @@ export default abstract class JlinkAbstract {
         `JLink version not found from remote.\n` +
           `Expected version: ${seggerVersion}.\n` +
           `Remote provided JLink list: \n` +
-          `${this.remoteJlinkList.map((jlink) => `${jlink.version}\n`)}`
+          `${this.remoteJlinkList
+            .map((jlink) => `${jlink.version}`)
+            .join("\n")}`
       );
     }
 
@@ -437,5 +443,23 @@ export default abstract class JlinkAbstract {
 
   getJlinkPath() {
     return this.jlinkPath;
+  }
+
+  setJlinkVersion(version: string) {
+    const localInstalled = this.listLocalInstalled();
+    const jlinkPath = localInstalled.find((path) =>
+      path.endsWith(convertToSeggerVersion(version))
+    );
+    if (jlinkPath && fs.existsSync(jlinkPath)) {
+      this.setJlinkPath(jlinkPath);
+    } else
+      throw new Error(
+        "JLink version not found in local installed, install first"
+      );
+    this.jlinkVersion = convertToSeggerVersion(version);
+  }
+
+  getJlinkVersion() {
+    return this.jlinkVersion;
   }
 }
