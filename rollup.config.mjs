@@ -14,13 +14,15 @@ export default [
       }),
     ],
     external: [
+      "@vscode/sudo-prompt",
       "axios",
+      "child_process",
       "fs",
       "fs/promises",
       "os",
       "path",
-      "@vscode/sudo-prompt",
-      "child_process",
+      "tar",
+      "untildify",
     ],
   },
 ];
