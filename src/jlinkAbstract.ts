@@ -5,6 +5,7 @@ import os from "os";
 import path from "path";
 import { convertToSeggerVersion, formatDate, sortJlinkIndex } from "./common";
 import axios from "axios";
+import Store from "electron-store";
 
 const SEGGER_BASE_URL = "https://www.segger.com/downloads/jlink";
 
@@ -42,17 +43,24 @@ export default abstract class JlinkAbstract {
   baseUrl: string = "";
   jlinkPath: string = "";
   jlinkVersion: string = "";
+  store: Store = new Store({ name: "nrf-jlink" });
+  jlinkLicenseAccepted: boolean = false;
 
   constructor(os: typeof process.platform, arch: typeof process.arch) {
     this.os = os;
     this.arch = arch;
     this.jlinkPath = process.env["NRF_JLINK_PATH"] || "";
     this.jlinkVersion = process.env["NRF_JLINK_VERSION"] || "";
+    this.jlinkLicenseAccepted = this.store.get("licenseAccepted") == "true";
   }
 
   abstract listRemote(): Promise<JlinkDownload[]>;
 
   install(installPath?: string): Promise<void> {
+    if (!this.jlinkLicenseAccepted) {
+      throw new Error("License not accepted, call agreeToLicense first");
+    }
+
     if (!this.downloadedJlinkPath) {
       throw new Error("JLink not downloaded, call download first");
     }
@@ -468,5 +476,19 @@ export default abstract class JlinkAbstract {
 
   getJlinkVersion() {
     return this.jlinkVersion;
+  }
+
+  acceptLicense() {
+    this.jlinkLicenseAccepted = true;
+    this.store.set("licenseAccepted", "true");
+  }
+
+  declineLicense() {
+    this.jlinkLicenseAccepted = false;
+    this.store.set("licenseAccepted", "false");
+  }
+
+  showLicense(): String {
+    return "License";
   }
 }

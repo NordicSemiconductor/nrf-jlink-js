@@ -156,4 +156,28 @@ export default class Jlink {
   getJlinkVersion() {
     return this.jlink.getJlinkVersion();
   }
+
+  /**
+   * Accepts the JLink license.
+   * This is required before using the JLink library.
+   */
+  acceptLicense() {
+    this.jlink.acceptLicense();
+  }
+
+  /**
+   * Declines the JLink license.
+   */
+  declineLicense() {
+    this.jlink.declineLicense();
+  }
+
+  /**
+   * Shows the JLink license.
+   *
+   * @returns The JLink license in text.
+   */
+  showLicense(): String {
+    return this.jlink.showLicense();
+  }
 }
