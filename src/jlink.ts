@@ -90,8 +90,7 @@ export default class Jlink {
    * @param progressUpdate - Optional callback to track the download progress.
    */
   async downloadAndInstall(version: string, progressUpdate: ProgressCallback) {
-    await this.download(version, progressUpdate);
-    await this.jlink.install();
+    await this.jlink.downloadAndInstall(version, progressUpdate);
   }
 
   /**

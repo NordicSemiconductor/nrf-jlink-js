@@ -5,9 +5,12 @@ import os from "os";
 import path from "path";
 import { convertToSeggerVersion, formatDate, sortJlinkIndex } from "./common";
 import axios from "axios";
-import Store from "electron-store";
+import untildify from "untildify";
 
 const SEGGER_BASE_URL = "https://www.segger.com/downloads/jlink";
+const SEGGER_LICENSE_STORE_PATH = untildify(
+  "~/.nrfconnect-apps/jlink/store.json"
+);
 
 export type JlinkIndex = {
   version: number;
@@ -43,7 +46,6 @@ export default abstract class JlinkAbstract {
   baseUrl: string = "";
   jlinkPath: string = "";
   jlinkVersion: string = "";
-  store: Store = new Store({ name: "nrf-jlink" });
   jlinkLicenseAccepted: boolean = false;
 
   constructor(os: typeof process.platform, arch: typeof process.arch) {
@@ -51,15 +53,13 @@ export default abstract class JlinkAbstract {
     this.arch = arch;
     this.jlinkPath = process.env["NRF_JLINK_PATH"] || "";
     this.jlinkVersion = process.env["NRF_JLINK_VERSION"] || "";
-    this.jlinkLicenseAccepted = this.store.get("licenseAccepted") == "true";
+    this.jlinkLicenseAccepted = this.getLicenseAccepted();
   }
 
   abstract listRemote(): Promise<JlinkDownload[]>;
 
   install(installPath?: string): Promise<void> {
-    if (!this.jlinkLicenseAccepted) {
-      throw new Error("License not accepted, call agreeToLicense first");
-    }
+    this.checkLicenseAccepted();
 
     if (!this.downloadedJlinkPath) {
       throw new Error("JLink not downloaded, call download first");
@@ -90,6 +90,12 @@ export default abstract class JlinkAbstract {
   protected abstract installLinux(): Promise<void>;
 
   protected abstract installWindows(): Promise<void>;
+
+  async downloadAndInstall(version: string, progressUpdate: ProgressCallback) {
+    this.checkLicenseAccepted();
+    await this.download(version, progressUpdate);
+    await this.install();
+  }
 
   abstract upload(
     filePath: string,
@@ -480,12 +486,36 @@ export default abstract class JlinkAbstract {
 
   acceptLicense() {
     this.jlinkLicenseAccepted = true;
-    this.store.set("licenseAccepted", "true");
+    this.updateLicenseAccepted(true);
   }
 
   declineLicense() {
     this.jlinkLicenseAccepted = false;
-    this.store.set("licenseAccepted", "false");
+    this.updateLicenseAccepted(false);
+  }
+
+  updateLicenseAccepted(accepted: boolean) {
+    fs.writeFileSync(
+      SEGGER_LICENSE_STORE_PATH,
+      JSON.stringify({ segger_license_accepted: accepted })
+    );
+  }
+
+  getLicenseAccepted(): boolean {
+    try {
+      const store = fs.readFileSync(SEGGER_LICENSE_STORE_PATH, {
+        encoding: "utf-8",
+      });
+      return JSON.parse(store)["segger_license_accepted"] == true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  checkLicenseAccepted() {
+    if (!this.getLicenseAccepted()) {
+      throw new Error("License not accepted, call agreeToLicense first");
+    }
   }
 
   showLicense(): String {
