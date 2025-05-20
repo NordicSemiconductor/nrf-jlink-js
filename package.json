@@ -1,36 +1,29 @@
 {
-  "devDependencies": {
-    "@babel/preset-env": "^7.26.0",
-    "@babel/preset-typescript": "^7.26.0",
-    "@rollup/plugin-typescript": "^12.1.1",
-    "@types/jest": "^29.5.14",
-    "jest": "^29.7.0",
-    "rollup": "^4.28.1",
-    "ts-node": "^10.9.2",
-    "tslib": "^2.8.1",
-    "typescript": "^5.7.2"
-  },
-  "name": "nrf-jlink",
-  "version": "1.0.0",
-  "main": "dist/index.js",
-  "type": "module",
-  "types": "dist/src/index.d.ts",
+  "name": "@nordicsemiconductor/nrf-jlink-js",
+  "version": "0.0.0-alpha1",
+  "main": "dist",
+  "types": "dist",
+  "files": [
+    "dist"
+  ],
   "dependencies": {
-    "@vscode/sudo-prompt": "^9.3.1",
     "axios": "^1.7.9",
-    "install": "^0.13.0",
-    "tar": "^7.4.3",
-    "untildify": "^5.0.0"
+    "semver": "^7.7.2"
   },
   "scripts": {
-    "build": "rollup -c",
-    "publish-installer": "ts-node ./scripts/publishInstaller",
-    "publish-bundle": "ts-node ./scripts/publishBundle",
-    "test": "jest",
-    "test-gui": "ts-node ./scripts/testExamples"
+    "build": "tsc",
+    "release-jlink": "ts-node scripts/release-jlink.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": ""
+  "devDependencies": {
+    "@types/semver": "^7.7.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NordicSemiconductor/nrf-jlink-js.git"
+  },
+  "author": "Nordic Semiconductor ASA",
+  "license": "Proprietary",
+  "description": "Shared library to handle J-Link versions"
 }

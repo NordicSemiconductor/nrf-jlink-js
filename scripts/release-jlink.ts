@@ -1,0 +1,164 @@
+#!/usr/bin/env ts-node
+
+import path from 'path';
+import axios from 'axios';
+import os from 'os';
+import fs from 'fs';
+import { mkdirSync } from 'fs';
+
+import { fetchIndex, JLinkIndex, JLinkVariant, saveToFile, ArchUrl } from '../src/common';
+
+const SEGGER_DOWNLOAD_BASE_URL = "https://www.segger.com/downloads/jlink";
+const ARTIFACTORY_UPLOAD_BASE_URL = `https://files.nordicsemi.com/artifactory/swtools/external/ncd/jlink/`;
+
+const platformToJlinkPlatform = (variant: keyof JLinkVariant) => {
+    switch (variant) {
+        case "win32":
+            return "Windows";
+        case "linux":
+            return "Linux";
+        case "darwin":
+            return "MacOSX";
+        default:
+            throw new Error(`Unknown variant ${variant}`);
+    }
+}
+
+const doPerVariant = async (variants: JLinkVariant, action: (value: string) => Promise<string> | string | void): Promise<JLinkVariant> => {
+    const ret = {};
+    for (let platform in variants) {
+        ret[platform] = {};
+        for (let arch in variants[platform]) {
+            const val = await action(variants[platform][arch]);
+            if (val) {
+                ret[platform][arch] = val;
+            } else {
+                ret[platform][arch] = variants[platform][arch];
+            }
+        }
+    }
+    return ret as JLinkVariant;
+}
+
+const  downloadInstallers = async (
+    fileNames: JLinkVariant,
+): Promise<JLinkVariant> => {
+    console.log("Started downloading all JLink variants.")
+
+    const ret = await doPerVariant((fileNames), async (fileName) => {
+        const url = `${SEGGER_DOWNLOAD_BASE_URL}/${fileName}`;
+
+        console.log("Started download:", url);
+
+        const {
+            status,
+            data: stream,
+        } = await axios.postForm(
+            url,
+            { accept_license_agreement: "accepted" },
+            {
+                responseType: "stream",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            }
+        );
+        if (status !== 200) {
+            throw new Error(
+                `Unable to download ${url}. Got status code ${status}.`
+            );
+        }
+
+        console.log("Finished download:", url);
+
+        const destinationFile = path.join(os.tmpdir(), fileName);
+        mkdirSync(path.dirname(destinationFile), { recursive: true });
+        await saveToFile(stream, destinationFile)
+
+        return destinationFile;
+    })
+
+    console.log("Finished downloading all JLink variants.")
+
+    return ret;
+}
+
+const getFileNames = (
+      rawVersion: string,
+  ): JLinkVariant => {
+      let version: { major: string; minor: string; patch?: string };
+      const regex = /(\d+)\.(\d\d)(.{0,1})/;
+      const [parsedVersion, major, minor, patch] = rawVersion.match(regex) ?? [];
+      if (!parsedVersion) {
+          throw new Error(`Unable to parse version ${rawVersion}`);
+      }
+      version = {
+          major,
+          minor,
+          patch: patch.toLowerCase(),
+      };
+      const platforms = ["darwin", "linux", "win32"] as (keyof JLinkVariant)[];
+      const archs = ["arm64", "x64"] as (keyof ArchUrl)[];
+    
+      let fileNames = {};
+      for (let platform of platforms) {
+          fileNames[platform] = {};
+          for (let arch of archs) {
+              fileNames[platform][arch] = `JLink_${platformToJlinkPlatform(platform)}_V${version.major}${version.minor}${version.patch ?? ""}_${arch == 'x64' ? 'x86_64' : arch}.exe`;
+          }
+      }
+      
+      return fileNames as JLinkVariant;
+  }
+
+const getUpdatedSourceJson = async (version: string, jlinkUrl: JLinkVariant): Promise<JLinkIndex> => 
+    fetchIndex().then((index) => ({ ...index, version, jlinkUrl }))
+
+const uploadFile = async (url: string, data: Buffer, fileSize: number) => {
+      const {
+          status
+      } = await axios.put(url, data, {
+        headers: {
+          "X-JFrog-Art-Api": process.env.NORDIC_ARTIFACTORY_TOKEN,
+          "Content-Length": fileSize,
+        },
+      });
+
+      if (status != 200 && status != 201) {
+        throw new Error(
+          `Unable to upload to ${url}. Got status code ${status}.`
+        );
+      }
+}
+
+const upload = (version: string, files: JLinkVariant) =>{
+    if (!process.env.NORDIC_ARTIFACTORY_TOKEN) {
+      throw new Error("NORDIC_ARTIFACTORY_TOKEN environment variable not set");
+    }
+
+    return new Promise(async (resolve) => {
+        // JLink installers
+        const jlinkUrls = await doPerVariant(files, async (filePath) =>{ 
+            const targetUrl = `${ARTIFACTORY_UPLOAD_BASE_URL}/${path.basename(filePath)}`;
+            await uploadFile(targetUrl, fs.readFileSync(filePath), fs.statSync(filePath).size);
+            fs.rmSync(filePath);
+            return targetUrl;
+        });
+
+        // Index
+        const targetUrl = `${ARTIFACTORY_UPLOAD_BASE_URL}/index.json`;
+        const updatedIndexJSON = await getUpdatedSourceJson(
+            version,
+            jlinkUrls,
+        )
+        const uploadData = Buffer.from(JSON.stringify(updatedIndexJSON, null, 2));
+        await uploadFile(targetUrl, uploadData, uploadData.length);
+
+        return resolve(targetUrl);
+    });
+}
+
+const main = (version: string) => downloadInstallers(getFileNames(version)).then(files => upload(version, files));
+
+const runAsScript = require.main === module;
+if (runAsScript) {
+    console.log(process.argv)
+}
