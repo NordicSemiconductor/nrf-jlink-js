@@ -1,5 +1,4 @@
-import { spawn, execFile } from "child_process";
-import fs from "fs";
+import { spawn, execSync, execFile } from "child_process";
 import { mkdir } from "fs/promises";
 import os from "os";
 import path from "path";
@@ -11,7 +10,14 @@ import { fetchIndex, saveToFile, JLinkIndex } from "./common";
 const getJLinkExePath = () => {
     switch (os.platform()) {
         case "win32":
-            return ''; // TODO: need to read registry
+            const path = execSync( "reg query HKEY_CURRENT_USER\\Software\\SEGGER\\J-Link /v InstallPath").toString();
+            const pathAlternative = execSync( "reg query HKEY_LOCAL_MACHINE\\Software\\SEGGER\\J-Link /v InstallPath").toString();
+            if (!path && !pathAlternative) {
+                throw new Error('JLink not installed');
+            } else if ((path && typeof path !== 'string') || (pathAlternative && typeof pathAlternative !== 'string')) {
+                throw new Error('Unable to read JLink install path');
+            }
+            return (path || pathAlternative) as string;
         case "linux":
             case "darwin":
             return 'JLinkExe';
