@@ -9,7 +9,7 @@ import { mkdirSync } from 'fs';
 import { fetchIndex, JLinkIndex, JLinkVariant, saveToFile, ArchUrl } from '../src/common';
 
 const SEGGER_DOWNLOAD_BASE_URL = "https://www.segger.com/downloads/jlink";
-const ARTIFACTORY_UPLOAD_BASE_URL = `https://files.nordicsemi.com/artifactory/swtools/external/ncd/jlink/`;
+const ARTIFACTORY_UPLOAD_BASE_URL = `https://files.nordicsemi.com/artifactory/swtools/external/ncd/jlink`;
 
 const platformToJlinkPlatform = (variant: keyof JLinkVariant) => {
     switch (variant) {
@@ -81,20 +81,36 @@ const  downloadInstallers = async (
     return ret;
 }
 
-const getFileNames = (
-      rawVersion: string,
-  ): JLinkVariant => {
-      let version: { major: string; minor: string; patch?: string };
-      const regex = /(\d+)\.(\d\d)(.{0,1})/;
+const getStandardisedVersion = (rawVersion: string): { major: string; minor: string; patch?: string } => {
+      const regex = /[vV]?(\d+)\.(\d\d)(.{0,1})/;
       const [parsedVersion, major, minor, patch] = rawVersion.match(regex) ?? [];
       if (!parsedVersion) {
           throw new Error(`Unable to parse version ${rawVersion}`);
       }
-      version = {
+      return {
           major,
           minor,
           patch: patch.toLowerCase(),
       };
+}
+
+const getFileFormat = (platform: string) => {
+    switch (platform) {
+        case "win32":
+            return "exe";
+        case "darwin":
+            return "pkg";
+        case "linux":
+            return "deb";
+        default:
+            throw new Error(`Unknown platform ${process.platform}`);
+    }
+}
+
+const getFileNames = (
+      rawVersion: string,
+  ): JLinkVariant => {
+      const version = getStandardisedVersion(rawVersion);
       const platforms = ["darwin", "linux", "win32"] as (keyof JLinkVariant)[];
       const archs = ["arm64", "x64"] as (keyof ArchUrl)[];
     
@@ -102,29 +118,28 @@ const getFileNames = (
       for (let platform of platforms) {
           fileNames[platform] = {};
           for (let arch of archs) {
-              fileNames[platform][arch] = `JLink_${platformToJlinkPlatform(platform)}_V${version.major}${version.minor}${version.patch ?? ""}_${arch == 'x64' ? 'x86_64' : arch}.exe`;
+              fileNames[platform][arch] = `JLink_${platformToJlinkPlatform(platform)}_V${version.major}${version.minor}${version.patch ?? ""}_${arch == 'x64' ? 'x86_64' : arch}.${getFileFormat(platform)}`;
           }
       }
       
       return fileNames as JLinkVariant;
   }
 
-const getUpdatedSourceJson = async (version: string, jlinkUrl: JLinkVariant): Promise<JLinkIndex> => 
-    fetchIndex().then((index) => ({ ...index, version, jlinkUrl }))
+const getUpdatedSourceJson = async (version: string, jlinkUrls: JLinkVariant): Promise<JLinkIndex> => 
+    fetchIndex().then((index) => ({ ...index, version, jlinkUrls }))
 
-const uploadFile = async (url: string, data: Buffer, fileSize: number) => {
-      const {
-          status
-      } = await axios.put(url, data, {
-        headers: {
-          "X-JFrog-Art-Api": process.env.NORDIC_ARTIFACTORY_TOKEN,
-          "Content-Length": fileSize,
-        },
+const uploadFile = async (url: string, data: Buffer) => {
+    const res = await fetch(url, {
+          method: "PUT",
+          body: data,
+          headers: {
+              Authorization: `Bearer ${process.env.NORDIC_ARTIFACTORY_TOKEN}`,
+          },
       });
 
-      if (status != 200 && status != 201) {
+      if (!res.ok) {
         throw new Error(
-          `Unable to upload to ${url}. Got status code ${status}.`
+          `Unable to upload to ${url}. Status code: ${res.status}. Body: ${await res.text()}`
         );
       }
 }
@@ -134,23 +149,30 @@ const upload = (version: string, files: JLinkVariant) =>{
       throw new Error("NORDIC_ARTIFACTORY_TOKEN environment variable not set");
     }
 
+    console.log("Started uploading all JLink variants.");
+
     return new Promise(async (resolve) => {
         // JLink installers
         const jlinkUrls = await doPerVariant(files, async (filePath) =>{ 
-            const targetUrl = `${ARTIFACTORY_UPLOAD_BASE_URL}/${path.basename(filePath)}`;
-            await uploadFile(targetUrl, fs.readFileSync(filePath), fs.statSync(filePath).size);
+            const fileName = path.basename(filePath);
+            console.log("Started upload:", fileName);
+            const targetUrl = `${ARTIFACTORY_UPLOAD_BASE_URL}/${fileName}`;
+            await uploadFile(targetUrl, fs.readFileSync(filePath));
             fs.rmSync(filePath);
+            console.log("Finished upload:", fileName);
             return targetUrl;
         });
 
         // Index
+        console.log("Started uploading Index");
         const targetUrl = `${ARTIFACTORY_UPLOAD_BASE_URL}/index.json`;
+        const versionObject = getStandardisedVersion(version);
         const updatedIndexJSON = await getUpdatedSourceJson(
-            version,
+            `v${versionObject.major}.${versionObject.minor}${versionObject.patch || ""}`,
             jlinkUrls,
         )
-        const uploadData = Buffer.from(JSON.stringify(updatedIndexJSON, null, 2));
-        await uploadFile(targetUrl, uploadData, uploadData.length);
+        await uploadFile(targetUrl, Buffer.from(JSON.stringify(updatedIndexJSON, null, 2)));
+        console.log("Finished uploading Index");
 
         return resolve(targetUrl);
     });
@@ -160,5 +182,12 @@ const main = (version: string) => downloadInstallers(getFileNames(version)).then
 
 const runAsScript = require.main === module;
 if (runAsScript) {
-    console.log(process.argv)
+    const versionIndex = process.argv.find(arg => arg === '--version' || arg === '-v');
+    const version = versionIndex ? process.argv[process.argv.indexOf(versionIndex) + 1] : undefined;
+    if (!version) {
+        console.error("No version passed with --version or -v");
+        process.exit(1);
+    } 
+
+    main(version)
 }
