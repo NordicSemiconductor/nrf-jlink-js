@@ -85,7 +85,7 @@ const getStandardisedVersion = (rawVersion: string): { major: string; minor: str
       const regex = /[vV]?(\d+)\.(\d\d)(.{0,1})/;
       const [parsedVersion, major, minor, patch] = rawVersion.match(regex) ?? [];
       if (!parsedVersion) {
-          throw new Error(`Unable to parse version ${rawVersion}`);
+          throw new Error(`Unable to parse version ${rawVersion}. Valid formats: v12.34, v1.23a, V1.23a, 12.34, 1.23a`);
       }
       return {
           major,
