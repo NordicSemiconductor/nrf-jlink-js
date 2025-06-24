@@ -1,3 +1,9 @@
+## 0.0.0-alpha3 - 2025-06-24
+
+### Fixed
+
+-   Handle local JLink version
+
 ## 0.0.0-alpha2 - 2025-06-24
 
 ### Fixed

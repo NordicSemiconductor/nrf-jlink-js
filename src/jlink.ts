@@ -34,9 +34,9 @@ const getInstalledJLinkVersion = (): Promise<string> => {
             const output = data.toString();
             const versionRegExp = /DLL version (V\d+\.\d+\w*),.*/;
             const versionMatch = output.match(versionRegExp);
-            if (versionMatch) {
+            if (versionMatch?.[1]) {
                 jlinkExeCmd.kill(9);
-                // resolve(versionMatch[1])
+                resolve(versionMatch[1])
             } else if (data.toString().includes("Connecting to")) {
                 jlinkExeCmd.kill(9);
                 return;
