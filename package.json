@@ -1,6 +1,6 @@
 {
   "name": "@nordicsemiconductor/nrf-jlink-js",
-  "version": "0.0.0-alpha1",
+  "version": "0.0.0-alpha2",
   "main": "dist",
   "types": "dist",
   "files": [
@@ -21,7 +21,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/NordicSemiconductor/nrf-jlink-js.git"
+    "url": "git+https://github.com/NordicSemiconductor/nrf-jlink-js.git"
   },
   "author": "Nordic Semiconductor ASA",
   "license": "Proprietary",
