@@ -14,7 +14,7 @@ export interface JLinkVariant {
 
 export interface JLinkIndex {
     version: string;
-    jlinkUrl: JLinkVariant;
+    jlinkUrls: JLinkVariant;
 }
 
 const fetchJSON = async <T>(url: string): Promise<T> => {
@@ -27,15 +27,15 @@ const fetchJSON = async <T>(url: string): Promise<T> => {
     return data;
 }
 
-const indexUrl = "https://files.nordicsemi.com/artifactory/swtools/external/jlink/index.json";
+const indexUrl = "https://files.nordicsemi.com/artifactory/swtools/external/ncd/jlink/index.json";
 export const fetchIndex = async () => {
     const res = await fetchJSON<JLinkIndex>(indexUrl)
 
     if (
-        res == null || typeof res !== 'object' || res.version !== undefined || res.jlinkUrl !== undefined
+        res == null || typeof res !== 'object' || res.version !== undefined || res.jlinkUrls !== undefined
     ) {
         throw new Error(
-            '`source.json` does not have the expected content.'
+            '`index.json` does not have the expected content.'
         );
     }
 
