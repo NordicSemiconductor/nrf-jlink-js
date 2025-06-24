@@ -1,3 +1,3 @@
-import Jlink from "./jlink";
+import { downloadAndInstallJLink, getVersionToInstall } from "./jlink";
 
-export default Jlink;
+export { downloadAndInstallJLink, getVersionToInstall };

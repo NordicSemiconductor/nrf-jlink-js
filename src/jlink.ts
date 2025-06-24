@@ -1,182 +1,180 @@
-import { convertToSeggerVersion } from "./common";
-import JlinkAbstract, {
-  JlinkDownload,
-  JlinkInstallType,
-  ProgressCallback,
-} from "./jlinkAbstract";
-import JlinkBundle from "./jlinkBundle";
-import JlinkInstaller from "./jlinkInstaller";
+import { spawn, execSync, execFile } from "child_process";
+import { mkdir } from "fs/promises";
+import os from "os";
+import path from "path";
+import semver from 'semver';
+import axios from "axios";
 
-export default class Jlink {
-  installType: JlinkInstallType;
-  os: typeof process.platform;
-  arch: typeof process.arch;
-  jlink: JlinkAbstract;
+import { fetchIndex, saveToFile, JLinkIndex } from "./common";
 
-  constructor(
-    installType?: "installer" | "bundle",
-    os?: typeof process.platform,
-    arch?: typeof process.arch
-  ) {
-    this.installType = installType || "installer";
-    this.os = os || process.platform;
-    this.arch = arch || process.arch;
-
-    switch (this.installType) {
-      case "installer":
-        this.jlink = new JlinkInstaller(this.os, this.arch);
-        return;
-      case "bundle":
-        this.jlink = new JlinkBundle(this.os, this.arch);
-        return;
-      default:
-        throw new Error("Invalid install type");
+const getJLinkExePath = () => {
+    switch (os.platform()) {
+        case "win32":
+            const path = execSync( "reg query HKEY_CURRENT_USER\\Software\\SEGGER\\J-Link /v InstallPath").toString();
+            const pathAlternative = execSync( "reg query HKEY_LOCAL_MACHINE\\Software\\SEGGER\\J-Link /v InstallPath").toString();
+            if (!path && !pathAlternative) {
+                throw new Error('JLink not installed');
+            } else if ((path && typeof path !== 'string') || (pathAlternative && typeof pathAlternative !== 'string')) {
+                throw new Error('Unable to read JLink install path');
+            }
+            return (path || pathAlternative) as string;
+        case "linux":
+            case "darwin":
+            return 'JLinkExe';
+        default:
+            throw new Error("Invalid platform");
     }
-  }
-
-  /**
-   * Lists all JLink versions installed locally.
-   *
-   * @returns An array of strings representing the path of the installed JLink.
-   */
-
-  listLocalInstalled(): string[] {
-    return this.jlink.listLocalInstalled();
-  }
-  /**
-   * Lists all JLink versions provided by Nordic.
-   *
-   * @returns An array of object representing the content of the JLink.
-   */
-  async listRemote(): Promise<JlinkDownload[]> {
-    return await this.jlink.listRemote();
-  }
-
-  /**
-   * Downloads the specified version of JLink from Nordic.
-   *
-   * @param version - The version of JLink to download.
-   * @param progressUpdate - Optional callback to track the download progress.
-   * @returns A promise that resolves to the path of the downloaded JLink.
-   */
-  async download(
-    version: string,
-    progressUpdate?: ProgressCallback
-  ): Promise<string> {
-    return await this.jlink.download(version, progressUpdate);
-  }
-
-  /**
-   * Downloads the specified version of JLink from Segger.
-   *
-   * @param version - The version of JLink to download.
-   * @param progressUpdate - Optional callback to track the download progress.
-   * @returns A promise that resolves to the path of the downloaded JLink.
-   */
-  async downloadFromSegger(
-    version: string,
-    progressUpdate?: ProgressCallback
-  ): Promise<string> {
-    return await this.jlink.downloadFromSegger(version, progressUpdate);
-  }
-  async install(installPath?: string) {
-    await this.jlink.install(installPath);
-  }
-
-  /**
-   * Downloads the specified version of JLink from Nordic and installs it.
-   *
-   * @param version - The version of JLink to download.
-   * @param progressUpdate - Optional callback to track the download progress.
-   */
-  async downloadAndInstall(version: string, progressUpdate: ProgressCallback) {
-    await this.jlink.downloadAndInstall(version, progressUpdate);
-  }
-
-  /**
-   * Retrieves the version of the installed JLink.
-   *
-   * @returns A promise that resolves to a string representing the JLink version.
-   */
-  async getVersion(): Promise<string> {
-    return await this.jlink.getVersion();
-  }
-
-  /**
-   * Uploads the specified file to Nordic's Artifactory.
-   *
-   * @param filePath - The path to the JLink file to upload.
-   * @param version - The version of the JLink being uploaded.
-   * @param progressUpdate - Optional callback to track the upload progress.
-   * @returns A promise that resolves to the URL the file was uploaded to.
-   */
-  async upload(
-    filePath: string,
-    version: string,
-    progressUpdate?: ProgressCallback
-  ): Promise<string> {
-    return await this.jlink.upload(filePath, version, progressUpdate);
-  }
-
-  /**
-   * Sets the path to the JLink library.
-   * Also sets the path in system environment variable `NRF_JLINK_PATH`.
-   *
-   * @param path - The path to the JLink library.
-   */
-  setJlinkPath(path: string) {
-    process.env["NRF_JLINK_PATH"] = path;
-    this.jlink.setJlinkPath(path);
-  }
-
-  /**
-   * Gets the path to the JLink library.
-   *
-   * @returns The path to the JLink library.
-   */
-  getJlinkPath() {
-    return this.jlink.getJlinkPath();
-  }
-
-  /**
-   * Sets the version to the JLink library to use.
-   *
-   * @param version - The version to the JLink library to use.
-   */
-  setJlinkVersion(version: string) {
-    this.jlink.setJlinkVersion(version);
-  }
-
-  /**
-   * Gets the version to the JLink library in use.
-   *
-   * @returns The version to the JLink library in use.
-   */
-  getJlinkVersion() {
-    return this.jlink.getJlinkVersion();
-  }
-
-  /**
-   * Accepts the JLink license.
-   * This is required before using the JLink library.
-   */
-  acceptLicense() {
-    this.jlink.acceptLicense();
-  }
-
-  /**
-   * Declines the JLink license.
-   */
-  declineLicense() {
-    this.jlink.declineLicense();
-  }
-
-  /**
-   * Shows the JLink license.
-   *
-   * @returns The JLink license in text.
-   */
-  showLicense(): String {
-    return this.jlink.showLicense();
-  }
 }
+
+const getInstalledJLinkVersion = (): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const jlinkExeCmd = spawn(getJLinkExePath(), ["-NoGUI", "1"], { shell: true });
+
+        jlinkExeCmd.stdout.on("data", (data: string) => {
+            const output = data.toString();
+            const versionRegExp = /DLL version (V\d+\.\d+\w*),.*/;
+            const versionMatch = output.match(versionRegExp);
+            if (versionMatch) {
+                jlinkExeCmd.kill(9);
+                // resolve(versionMatch[1])
+            } else if (data.toString().includes("Connecting to")) {
+                jlinkExeCmd.kill(9);
+                return;
+            }
+        });
+
+        jlinkExeCmd.stderr.on("data", () => {
+            reject('Failed to read Jlink Version');
+        });
+    });
+}
+
+interface Update {
+    step: "install" | "download",
+    percentage: number;
+}
+
+const downloadJLink = async ({ jlinkUrl: jlinkUrls }: JLinkIndex, onUpdate?: (update: Update) => void): Promise<string> => {
+    // const platform = os.platform();
+    // const arch = os.arch();
+    // // // @ts-expect-error It is quite literally checked right before
+    // if (!(platform in jlinkUrls) || !(arch in jlinkUrls[platform])) {
+    //     throw new Error(`JLink not available for ${platform}/${arch}`)
+    // }
+    // // // @ts-expect-error We know it exists but it is also handled if undefined
+    // const url = jlinkUrls[platform]?.[arch]
+    // if (!url) {
+    //     throw new Error(`JLink not available for ${platform}/${arch}`)
+    // }
+    const url =""
+    const {
+        status,
+        data: stream,
+    } = await axios.get(
+        url,
+        {
+            responseType: "stream",
+            onDownloadProgress: ({loaded, total}) => 
+            onUpdate && loaded && total && 
+                onUpdate({ step: "download", percentage: Number(((loaded / total) * 100).toFixed(2))}),
+        }
+    );
+    if (status !== 200) {
+      throw new Error(
+        `Unable to download ${jlinkUrls}. Got status code ${status}.`
+      );
+    }
+
+    const destinationFile = path.join(os.tmpdir(), path.basename(url));
+    await mkdir(path.dirname(destinationFile), { recursive: true });
+    return await saveToFile(stream, destinationFile);
+}
+
+
+const installJLink = (installerPath: string, onUpdate?: (update: Update) => void): Promise<void> => {;
+    let command;
+    let args: string[];
+    switch (os.platform()) {
+        case 'darwin':
+            command = 'open';
+            args = ['-W', installerPath];
+            break;
+        case 'linux':
+            command = 'pkexec';
+            args = ['sh', '-c', `dpkg -i "${installerPath}"`];
+            break;
+        case 'win32':
+            command = `"${installerPath}"`;
+            break;
+        default:
+            throw new Error("Invalid platform")
+    }
+
+    onUpdate && onUpdate({ step: "install", percentage: 0 })
+
+    return new Promise((resolve, reject) => {
+        execFile(command, args, (error, stdout, stderr) => {
+            if (error) {
+                reject(error)
+            }
+            if (stderr) {
+                reject(stderr);
+            }
+            if (stdout && stdout.includes("successful")) {
+                onUpdate && onUpdate({ step: "install", percentage: 100 })
+                return resolve();
+            }
+        });
+    });
+}
+
+const convertToSemverVersion = (version: string) => {
+    const [, majorMinor, patchLetter] =
+        version.match(/V?(\d+\.\d+)(.)?/) ?? [];
+
+    const patch = patchLetter
+        ? patchLetter.charCodeAt(0) - 'a'.charCodeAt(0) + 1
+        : 0;
+
+        return `${majorMinor}.${patch}`;
+}
+
+const isValidVersion = (installedVersion: string, expectedVersion: string) => 
+    semver.gte(convertToSemverVersion(installedVersion), convertToSemverVersion(expectedVersion))
+
+
+interface JLinkState {
+    outdated: boolean;
+    installed: boolean;
+    versionToBeInstalled?: string
+    installedVersion?: string;
+}
+
+export const getVersionToInstall = async (fallbackVersion?: string): Promise<JLinkState> => {
+    const state: JLinkState = {
+        outdated: true,
+        installed: false,
+        versionToBeInstalled: fallbackVersion,
+    };
+    try {
+        state.installed = true
+        state.installedVersion = await getInstalledJLinkVersion()
+    } catch (e) {
+        // Leave default state
+    }
+
+    state.versionToBeInstalled = (await fetchIndex()).version
+
+    if (!state.installed || !state.installedVersion) {
+        return state;
+    }
+
+    state.outdated = !isValidVersion(state.installedVersion, state.versionToBeInstalled)
+
+    return state;
+}
+
+export const downloadAndInstallJLink = (onUpdate?: (update: Update) => void) => 
+    fetchIndex()
+        .then(v => downloadJLink(v, onUpdate))
+        .then(v => installJLink(v, onUpdate))
