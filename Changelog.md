@@ -1,3 +1,7 @@
+## 0.0.1 - 2025-06-27
+
+-   First stable release
+
 ## 0.0.0-alpha4 - 2025-06-26
 
 ### Fixed
