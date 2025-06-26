@@ -167,7 +167,7 @@ export const getVersionToInstall = async (fallbackVersion?: string): Promise<JLi
     const versionToBeInstalled = (await fetchIndex().catch(() => undefined))?.version ?? fallbackVersion;
     const installedVersion = await getInstalledJLinkVersion().catch(() => undefined);
     const installed = !!installedVersion;
-    const outdated = !installed || !versionToBeInstalled || isValidVersion(installedVersion, versionToBeInstalled);
+    const outdated = !installed || !versionToBeInstalled || !isValidVersion(installedVersion, versionToBeInstalled);
     
     return {
         outdated,
