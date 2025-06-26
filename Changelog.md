@@ -1,3 +1,10 @@
+## 0.0.0-alpha4 - 2025-06-26
+
+### Fixed
+
+-   Better spawn exit handling
+-   More consistent `getVersionToInstall`
+
 ## 0.0.0-alpha3 - 2025-06-24
 
 ### Fixed
