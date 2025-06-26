@@ -74,8 +74,8 @@ const downloadJLink = async ({ jlinkUrls }: JLinkIndex, onUpdate?: (update: Upda
         {
             responseType: "stream",
             onDownloadProgress: ({loaded, total}) => 
-            onUpdate && loaded && total && 
-                onUpdate({ step: "download", percentage: Number(((loaded / total) * 100).toFixed(2))}),
+            loaded && total && 
+                onUpdate?.({ step: "download", percentage: Number(((loaded / total) * 100).toFixed(2))}),
         }
     );
     if (status !== 200) {
@@ -109,7 +109,7 @@ const installJLink = (installerPath: string, onUpdate?: (update: Update) => void
             throw new Error("Invalid platform")
     }
 
-    onUpdate && onUpdate({ step: "install", percentage: 0 })
+    onUpdate?.({ step: "install", percentage: 0 })
 
     return new Promise((resolve, reject) => {
         execFile(command, args, (error, stdout, stderr) => {
@@ -119,8 +119,8 @@ const installJLink = (installerPath: string, onUpdate?: (update: Update) => void
             if (stderr) {
                 reject(stderr);
             }
-            if (stdout && stdout.includes("successful")) {
-                onUpdate && onUpdate({ step: "install", percentage: 100 })
+            if (stdout.includes("successful")) {
+                onUpdate?.({ step: "install", percentage: 100 })
                 return resolve();
             }
         });
@@ -150,27 +150,17 @@ interface JLinkState {
 }
 
 export const getVersionToInstall = async (fallbackVersion?: string): Promise<JLinkState> => {
-    const state: JLinkState = {
-        outdated: true,
-        installed: false,
-        versionToBeInstalled: fallbackVersion,
+    const versionToBeInstalled = (await fetchIndex().catch(() => undefined))?.version ?? fallbackVersion;
+    const installedVersion = await getInstalledJLinkVersion().catch(() => undefined);
+    const installed = !!installedVersion;
+    const outdated = !installed || !versionToBeInstalled || isValidVersion(installedVersion, versionToBeInstalled);
+    
+    return {
+        outdated,
+        installedVersion,
+        installed,
+        versionToBeInstalled,
     };
-    try {
-        state.installed = true
-        state.installedVersion = await getInstalledJLinkVersion()
-    } catch (e) {
-        // Leave default state
-    }
-
-    state.versionToBeInstalled = (await fetchIndex()).version
-
-    if (!state.installed || !state.installedVersion) {
-        return state;
-    }
-
-    state.outdated = !isValidVersion(state.installedVersion, state.versionToBeInstalled)
-
-    return state;
 }
 
 export const downloadAndInstallJLink = (onUpdate?: (update: Update) => void) => 
