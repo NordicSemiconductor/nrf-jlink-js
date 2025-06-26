@@ -74,8 +74,8 @@ const downloadJLink = async ({ jlinkUrls }: JLinkIndex, onUpdate?: (update: Upda
         {
             responseType: "stream",
             onDownloadProgress: ({loaded, total}) => 
-            onUpdate && loaded && total && 
-                onUpdate({ step: "download", percentage: Number(((loaded / total) * 100).toFixed(2))}),
+            loaded && total && 
+                onUpdate?.({ step: "download", percentage: Number(((loaded / total) * 100).toFixed(2))}),
         }
     );
     if (status !== 200) {
@@ -109,7 +109,7 @@ const installJLink = (installerPath: string, onUpdate?: (update: Update) => void
             throw new Error("Invalid platform")
     }
 
-    onUpdate && onUpdate({ step: "install", percentage: 0 })
+    onUpdate?.({ step: "install", percentage: 0 })
 
     return new Promise((resolve, reject) => {
         execFile(command, args, (error, stdout, stderr) => {
@@ -119,8 +119,8 @@ const installJLink = (installerPath: string, onUpdate?: (update: Update) => void
             if (stderr) {
                 reject(stderr);
             }
-            if (stdout && stdout.includes("successful")) {
-                onUpdate && onUpdate({ step: "install", percentage: 100 })
+            if (stdout.includes("successful")) {
+                onUpdate?.({ step: "install", percentage: 100 })
                 return resolve();
             }
         });
