@@ -2,6 +2,7 @@
 
 ### Fixed
 
+-   Outdated is set to false if version is not valid.
 -   Consistent format for `versionToInstall` and `installedVersion`.
 
 ## 0.0.1 - 2025-06-27
