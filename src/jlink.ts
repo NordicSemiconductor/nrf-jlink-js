@@ -145,15 +145,15 @@ const isValidVersion = (installedVersion: string, expectedVersion: string) =>
 interface JLinkState {
     outdated: boolean;
     installed: boolean;
-    versionToBeInstalled: string
+    versionToBeInstalled?: string
     installedVersion?: string;
 }
 
-export const getVersionToInstall = async (): Promise<JLinkState> => {
-    const versionToBeInstalled = (await fetchIndex()).version;
+export const getVersionToInstall = async (fallbackVersion?: string): Promise<JLinkState> => {
+    const versionToBeInstalled = (await fetchIndex().catch(() => undefined))?.version ?? fallbackVersion;
     const installedVersion = await getInstalledJLinkVersion().catch(() => undefined);
     const installed = !!installedVersion;
-    const outdated = !installed || isValidVersion(installedVersion, versionToBeInstalled);
+    const outdated = !installed || !versionToBeInstalled || isValidVersion(installedVersion, versionToBeInstalled);
     
     return {
         outdated,
