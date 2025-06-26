@@ -46,7 +46,7 @@ const getInstalledJLinkVersion = (): Promise<string> => {
             const versionMatch = data.toString().match(versionRegExp);
             if (versionMatch?.[1]) {
                 jlinkExeCmd.stdin.write(' exit\n');
-                resolve(versionMatch[1])
+                resolve(versionMatch[1].toLowerCase())
             } else if (data.toString().includes("Connecting to")) {
                 jlinkExeCmd.stdin.write(' exit\n');
                 reject('Failed to read Jlink Version');
