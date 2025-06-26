@@ -1,3 +1,9 @@
+## 0.0.2 - 2025-06-27
+
+### Fixed
+
+-   Consistent format for `versionToInstall` and `installedVersion`.
+
 ## 0.0.1 - 2025-06-27
 
 -   First stable release
