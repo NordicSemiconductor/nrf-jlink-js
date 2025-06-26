@@ -29,22 +29,36 @@ const getJLinkExePath = () => {
 const getInstalledJLinkVersion = (): Promise<string> => {
     return new Promise((resolve, reject) => {
         const jlinkExeCmd = spawn(getJLinkExePath(), ["-NoGUI", "1"], { shell: true });
+        const timeout = setTimeout(() => {
+            const pid = jlinkExeCmd?.pid;
+            if (pid) {
+                if (process.platform === 'win32') {
+                    spawn('taskkill', ['/pid', `${pid}`, '/f', '/t']);
+                } else {
+                    process.kill(pid);
+                }
+            }
+            reject('Failed to read Jlink Version');
+        }, 5000)
 
         jlinkExeCmd.stdout.on("data", (data: string) => {
-            const output = data.toString();
             const versionRegExp = /DLL version (V\d+\.\d+\w*),.*/;
-            const versionMatch = output.match(versionRegExp);
+            const versionMatch = data.toString().match(versionRegExp);
             if (versionMatch?.[1]) {
-                jlinkExeCmd.kill(9);
+                jlinkExeCmd.stdin.write(' exit\n');
                 resolve(versionMatch[1])
             } else if (data.toString().includes("Connecting to")) {
-                jlinkExeCmd.kill(9);
-                return;
+                jlinkExeCmd.stdin.write(' exit\n');
+                reject('Failed to read Jlink Version');
             }
         });
 
         jlinkExeCmd.stderr.on("data", () => {
             reject('Failed to read Jlink Version');
+        });
+
+        jlinkExeCmd.on('close', () => {
+            clearTimeout(timeout);
         });
     });
 }
