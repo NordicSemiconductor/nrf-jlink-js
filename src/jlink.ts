@@ -153,7 +153,7 @@ export const getVersionToInstall = async (): Promise<JLinkState> => {
     const versionToBeInstalled = (await fetchIndex()).version;
     const installedVersion = await getInstalledJLinkVersion().catch(() => undefined);
     const installed = !!installedVersion;
-    const outdated = installed ? isValidVersion(installedVersion, versionToBeInstalled) : true;
+    const outdated = !installed || isValidVersion(installedVersion, versionToBeInstalled);
     
     return {
         outdated,
