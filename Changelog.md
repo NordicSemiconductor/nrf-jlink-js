@@ -1,3 +1,9 @@
+## 0.0.3 - 2025-06-27
+
+### Fixed
+
+-   Always resolve `install` promise.
+
 ## 0.0.2 - 2025-06-27
 
 ### Fixed
