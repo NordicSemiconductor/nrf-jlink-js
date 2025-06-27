@@ -1,29 +1,29 @@
 {
-  "name": "@nordicsemiconductor/nrf-jlink-js",
-  "version": "0.0.2",
-  "main": "dist",
-  "types": "dist",
-  "files": [
-    "dist"
-  ],
-  "dependencies": {
-    "axios": "^1.7.9",
-    "semver": "^7.7.2"
-  },
-  "scripts": {
-    "build": "tsc",
-    "release-jlink": "ts-node scripts/release-jlink.ts"
-  },
-  "devDependencies": {
-    "@types/semver": "^7.7.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.7.2"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/NordicSemiconductor/nrf-jlink-js.git"
-  },
-  "author": "Nordic Semiconductor ASA",
-  "license": "Proprietary",
-  "description": "Shared library to handle J-Link versions"
+    "name": "@nordicsemiconductor/nrf-jlink-js",
+    "version": "0.0.2",
+    "main": "dist",
+    "types": "dist",
+    "files": [
+        "dist"
+    ],
+    "dependencies": {
+        "axios": "^1.7.9",
+        "semver": "^7.7.2"
+    },
+    "scripts": {
+        "build": "tsc",
+        "release-jlink": "ts-node scripts/release-jlink.ts"
+    },
+    "devDependencies": {
+        "@types/semver": "^7.7.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.7.2"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/NordicSemiconductor/nrf-jlink-js.git"
+    },
+    "author": "Nordic Semiconductor ASA",
+    "license": "Proprietary",
+    "description": "Shared library to handle J-Link versions"
 }
