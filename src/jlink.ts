@@ -138,17 +138,15 @@ const installJLink = (
     onUpdate?.({ step: 'install', percentage: 0 });
 
     return new Promise((resolve, reject) => {
-        execFile(command, args, (error, stdout, stderr) => {
+        execFile(command, args, (error, _, stderr) => {
             if (error) {
                 return reject(error);
             }
             if (stderr) {
                 return reject(stderr);
             }
-            if (stdout.includes('successful')) {
-                onUpdate?.({ step: 'install', percentage: 100 });
-                return resolve();
-            }
+            onUpdate?.({ step: 'install', percentage: 100 });
+            return resolve();
         });
     });
 };
