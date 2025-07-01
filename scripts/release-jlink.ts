@@ -211,12 +211,9 @@ const main = (version: string) =>
 
 const runAsScript = require.main === module;
 if (runAsScript) {
-    const versionIndex = process.argv.find(
-        arg => arg === '--version' || arg === '-v'
-    );
-    const version = versionIndex
-        ? process.argv[process.argv.indexOf(versionIndex) + 1]
-        : undefined;
+    const versionIndex =
+        process.argv.findIndex(arg => arg === '--version' || arg === '-v') + 1;
+    const version = versionIndex > 0 ? process.argv[versionIndex] : undefined;
     if (!version) {
         console.error('No version passed with --version or -v');
         process.exit(1);
