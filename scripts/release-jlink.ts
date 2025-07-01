@@ -54,6 +54,8 @@ const downloadInstallers = async (
 ): Promise<JLinkVariant> => {
     console.log('Started downloading all JLink variants.');
 
+    const incorrectFiles: string[] = [];
+
     const ret = await doPerVariant(fileNames, async fileName => {
         const url = `${SEGGER_DOWNLOAD_BASE_URL}/${fileName}`;
 
@@ -75,14 +77,24 @@ const downloadInstallers = async (
             );
         }
 
-        console.log('Finished download:', url);
+        if (stream.statusMessage === 'OK') {
+            console.log('Finished download:', url);
 
-        const destinationFile = path.join(os.tmpdir(), fileName);
-        mkdirSync(path.dirname(destinationFile), { recursive: true });
-        await saveToFile(stream, destinationFile);
+            const destinationFile = path.join(os.tmpdir(), fileName);
+            mkdirSync(path.dirname(destinationFile), { recursive: true });
+            await saveToFile(stream, destinationFile);
 
-        return destinationFile;
+            return destinationFile;
+        } else {
+            incorrectFiles.push(fileName);
+            console.log('Failed to download (check if file exists):', url);
+            return 'Incorrect';
+        }
     });
+
+    if (incorrectFiles.length > 0) {
+        throw new Error(`Failed to download: ${incorrectFiles.join(', ')}`);
+    }
 
     console.log('Finished downloading all JLink variants.');
 
