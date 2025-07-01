@@ -21,7 +21,7 @@ const fetchJSON = async <T>(url: string): Promise<T> => {
     const { status, data } = await axios.get(url, { responseType: 'json' });
     if (status !== 200) {
         throw new Error(
-            `Unable to fetch file from ${indexUrl}. Got status code ${status}.`
+            `Unable to fetch file from ${indexUrl}. Got status code ${status}.`,
         );
     }
     return data;
@@ -46,7 +46,7 @@ export const fetchIndex = async () => {
 
 export const saveToFile = (
     stream: NodeJS.ReadableStream,
-    destinationFile: string
+    destinationFile: string,
 ): Promise<string> =>
     new Promise((resolve, reject) => {
         const file = fs.createWriteStream(destinationFile);

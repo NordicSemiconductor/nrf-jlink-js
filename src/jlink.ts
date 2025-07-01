@@ -11,10 +11,10 @@ const getJLinkExePath = () => {
     switch (os.platform()) {
         case 'win32':
             const path = execSync(
-                'reg query HKEY_CURRENT_USER\\Software\\SEGGER\\J-Link /v InstallPath'
+                'reg query HKEY_CURRENT_USER\\Software\\SEGGER\\J-Link /v InstallPath',
             ).toString();
             const pathAlternative = execSync(
-                'reg query HKEY_LOCAL_MACHINE\\Software\\SEGGER\\J-Link /v InstallPath'
+                'reg query HKEY_LOCAL_MACHINE\\Software\\SEGGER\\J-Link /v InstallPath',
             ).toString();
             if (!path && !pathAlternative) {
                 throw new Error('JLink not installed');
@@ -79,7 +79,7 @@ interface Update {
 
 const downloadJLink = async (
     { jlinkUrls }: JLinkIndex,
-    onUpdate?: (update: Update) => void
+    onUpdate?: (update: Update) => void,
 ): Promise<string> => {
     const platform = os.platform();
     const arch = os.arch();
@@ -104,7 +104,7 @@ const downloadJLink = async (
     });
     if (status !== 200) {
         throw new Error(
-            `Unable to download ${jlinkUrls}. Got status code ${status}.`
+            `Unable to download ${jlinkUrls}. Got status code ${status}.`,
         );
     }
 
@@ -115,7 +115,7 @@ const downloadJLink = async (
 
 const installJLink = (
     installerPath: string,
-    onUpdate?: (update: Update) => void
+    onUpdate?: (update: Update) => void,
 ): Promise<void> => {
     let command;
     let args: string[];
@@ -164,7 +164,7 @@ const convertToSemverVersion = (version: string) => {
 const isValidVersion = (installedVersion: string, expectedVersion: string) =>
     semver.gte(
         convertToSemverVersion(installedVersion),
-        convertToSemverVersion(expectedVersion)
+        convertToSemverVersion(expectedVersion),
     );
 
 interface JLinkState {
@@ -175,12 +175,12 @@ interface JLinkState {
 }
 
 export const getVersionToInstall = async (
-    fallbackVersion?: string
+    fallbackVersion?: string,
 ): Promise<JLinkState> => {
     const versionToBeInstalled =
         (await fetchIndex().catch(() => undefined))?.version ?? fallbackVersion;
     const installedVersion = await getInstalledJLinkVersion().catch(
-        () => undefined
+        () => undefined,
     );
     const installed = !!installedVersion;
     const outdated =

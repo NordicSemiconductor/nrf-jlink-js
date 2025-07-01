@@ -32,7 +32,7 @@ const platformToJlinkPlatform = (variant: keyof JLinkVariant) => {
 
 const doPerVariant = async (
     variants: JLinkVariant,
-    action: (value: string) => Promise<string> | string | void
+    action: (value: string) => Promise<string> | string | void,
 ): Promise<JLinkVariant> => {
     const ret = {};
     for (let platform in variants) {
@@ -50,7 +50,7 @@ const doPerVariant = async (
 };
 
 const downloadInstallers = async (
-    fileNames: JLinkVariant
+    fileNames: JLinkVariant,
 ): Promise<JLinkVariant> => {
     console.log('Started downloading all JLink variants.');
 
@@ -67,11 +67,11 @@ const downloadInstallers = async (
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-            }
+            },
         );
         if (status !== 200) {
             throw new Error(
-                `Unable to download ${url}. Got status code ${status}.`
+                `Unable to download ${url}. Got status code ${status}.`,
             );
         }
 
@@ -90,13 +90,13 @@ const downloadInstallers = async (
 };
 
 const getStandardisedVersion = (
-    rawVersion: string
+    rawVersion: string,
 ): { major: string; minor: string; patch?: string } => {
     const regex = /[vV]?(\d+)\.(\d\d)(.{0,1})/;
     const [parsedVersion, major, minor, patch] = rawVersion.match(regex) ?? [];
     if (!parsedVersion) {
         throw new Error(
-            `Unable to parse version ${rawVersion}. Valid formats: v12.34, v1.23a, V1.23a, 12.34, 1.23a`
+            `Unable to parse version ${rawVersion}. Valid formats: v12.34, v1.23a, V1.23a, 12.34, 1.23a`,
         );
     }
     return {
@@ -129,7 +129,7 @@ const getFileNames = (rawVersion: string): JLinkVariant => {
         fileNames[platform] = {};
         for (let arch of archs) {
             fileNames[platform][arch] = `JLink_${platformToJlinkPlatform(
-                platform
+                platform,
             )}_V${version.major}${version.minor}${version.patch ?? ''}_${
                 arch == 'x64' ? 'x86_64' : arch
             }.${getFileFormat(platform)}`;
@@ -141,7 +141,7 @@ const getFileNames = (rawVersion: string): JLinkVariant => {
 
 const getUpdatedSourceJson = async (
     version: string,
-    jlinkUrls: JLinkVariant
+    jlinkUrls: JLinkVariant,
 ): Promise<JLinkIndex> =>
     fetchIndex().then(index => ({ ...index, version, jlinkUrls }));
 
@@ -158,7 +158,7 @@ const uploadFile = async (url: string, data: Buffer) => {
         throw new Error(
             `Unable to upload to ${url}. Status code: ${
                 res.status
-            }. Body: ${await res.text()}`
+            }. Body: ${await res.text()}`,
         );
     }
 };
@@ -166,7 +166,7 @@ const uploadFile = async (url: string, data: Buffer) => {
 const upload = (version: string, files: JLinkVariant) => {
     if (!process.env.NORDIC_ARTIFACTORY_TOKEN) {
         throw new Error(
-            'NORDIC_ARTIFACTORY_TOKEN environment variable not set'
+            'NORDIC_ARTIFACTORY_TOKEN environment variable not set',
         );
     }
 
@@ -192,11 +192,11 @@ const upload = (version: string, files: JLinkVariant) => {
             `v${versionObject.major}.${versionObject.minor}${
                 versionObject.patch || ''
             }`,
-            jlinkUrls
+            jlinkUrls,
         );
         await uploadFile(
             targetUrl,
-            Buffer.from(JSON.stringify(updatedIndexJSON, null, 2))
+            Buffer.from(JSON.stringify(updatedIndexJSON, null, 2)),
         );
         console.log('Finished uploading Index');
 
@@ -206,17 +206,14 @@ const upload = (version: string, files: JLinkVariant) => {
 
 const main = (version: string) =>
     downloadInstallers(getFileNames(version)).then(files =>
-        upload(version, files)
+        upload(version, files),
     );
 
 const runAsScript = require.main === module;
 if (runAsScript) {
-    const versionIndex = process.argv.find(
-        arg => arg === '--version' || arg === '-v'
-    );
-    const version = versionIndex
-        ? process.argv[process.argv.indexOf(versionIndex) + 1]
-        : undefined;
+    const versionIndex =
+        process.argv.findIndex(arg => arg === '--version' || arg === '-v') + 1;
+    const version = versionIndex > 0 ? process.argv[versionIndex] : undefined;
     if (!version) {
         console.error('No version passed with --version or -v');
         process.exit(1);
