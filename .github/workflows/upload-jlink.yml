@@ -4,9 +4,12 @@
 name: Release to NPM
 
 on:
-    release:
-        types: [published]
     workflow_dispatch:
+        inputs:
+          version:
+                required: true
+                type: string
+                description: "Version in format 1.23 or 1.23x"
 
 jobs:
     build:
@@ -14,15 +17,15 @@ jobs:
         permissions:
             contents: read
             id-token: write
+        environment:
+            name: ${{ inputs.description }}
         steps:
             - uses: actions/checkout@v4
             - uses: actions/setup-node@v4
               with:
                   node-version: '20.x'
-                  registry-url: 'https://registry.npmjs.org'
-                  cache: 'npm'
             - run: npm ci
-            - run: npm run build
-            - run: npm publish --provevance --access public
+            - run: npm run upload-jlink
               env:
-                  NODE_AUTH_TOKEN: ${{ secrets.WAYLAND_NPM_TOKEN }}
+                  ARTIFACTORY_TOKEN:
+                      ${{ secrets.COM_NORDICSEMI_FILES_PASSWORD_SWTOOLS_FRONTEND }}
