@@ -12,7 +12,7 @@
     },
     "scripts": {
         "build": "tsc",
-        "release-jlink": "ts-node scripts/release-jlink.ts"
+        "upload-jlink": "ts-node scripts/upload-jlink.ts"
     },
     "devDependencies": {
         "@types/semver": "^7.7.0",
