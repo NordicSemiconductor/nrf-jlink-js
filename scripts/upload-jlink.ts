@@ -157,7 +157,7 @@ const uploadFile = async (url: string, data: Buffer) => {
         method: 'PUT',
         body: data,
         headers: {
-            Authorization: `Bearer ${process.env.NORDIC_ARTIFACTORY_TOKEN}`,
+            Authorization: `Bearer ${process.env.ARTIFACTORY_TOKEN}`,
         },
     });
 
@@ -171,9 +171,9 @@ const uploadFile = async (url: string, data: Buffer) => {
 };
 
 const upload = (version: string, files: JLinkVariant) => {
-    if (!process.env.NORDIC_ARTIFACTORY_TOKEN) {
+    if (!process.env.ARTIFACTORY_TOKEN) {
         throw new Error(
-            'NORDIC_ARTIFACTORY_TOKEN environment variable not set',
+            'ARTIFACTORY_TOKEN environment variable not set',
         );
     }
 
