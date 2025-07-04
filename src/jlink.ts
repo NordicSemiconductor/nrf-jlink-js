@@ -113,7 +113,7 @@ const downloadJLink = async (
     return await saveToFile(stream, destinationFile);
 };
 
-const installJLink = (
+export const installJLink = (
     installerPath: string,
     onUpdate?: (update: Update) => void,
 ): Promise<void> => {
