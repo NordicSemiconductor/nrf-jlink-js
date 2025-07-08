@@ -1,5 +1,4 @@
 import { spawn, execSync, execFile } from 'child_process';
-import { mkdir } from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import semver from 'semver';
@@ -108,9 +107,10 @@ const downloadJLink = async (
         );
     }
 
-    const destinationFile = path.join(os.tmpdir(), path.basename(url));
-    await mkdir(path.dirname(destinationFile), { recursive: true });
-    return await saveToFile(stream, destinationFile);
+    return await saveToFile(
+        stream,
+        path.join(destinationPath, path.basename(url)),
+    );
 };
 
 export const installJLink = (

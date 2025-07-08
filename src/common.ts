@@ -1,5 +1,6 @@
 import axios from 'axios';
-import fs from 'fs';
+import { mkdirSync, createWriteStream } from 'fs';
+import path from 'path';
 
 export interface ArchUrl {
     arm64: string;
@@ -47,9 +48,10 @@ export const fetchIndex = async () => {
 export const saveToFile = (
     stream: NodeJS.ReadableStream,
     destinationFile: string,
-): Promise<string> =>
-    new Promise((resolve, reject) => {
-        const file = fs.createWriteStream(destinationFile);
+): Promise<string> => {
+    mkdirSync(path.dirname(destinationFile), { recursive: true });
+    return new Promise((resolve, reject) => {
+        const file = createWriteStream(destinationFile);
         stream.pipe(file);
         stream.on('error', reject);
         stream.on('end', () => {
@@ -58,3 +60,4 @@ export const saveToFile = (
             });
         });
     });
+};

@@ -4,7 +4,6 @@ import path from 'path';
 import axios from 'axios';
 import os from 'os';
 import fs from 'fs';
-import { mkdirSync } from 'fs';
 
 import {
     fetchIndex,
@@ -80,11 +79,7 @@ const downloadInstallers = async (
         if (stream.statusMessage === 'OK') {
             console.log('Finished download:', url);
 
-            const destinationFile = path.join(os.tmpdir(), fileName);
-            mkdirSync(path.dirname(destinationFile), { recursive: true });
-            await saveToFile(stream, destinationFile);
-
-            return destinationFile;
+            return await saveToFile(stream, path.join(os.tmpdir(), fileName));
         } else {
             incorrectFiles.push(fileName);
             console.log('Failed to download (check if file exists):', url);
