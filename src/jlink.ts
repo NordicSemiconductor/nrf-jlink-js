@@ -103,7 +103,7 @@ const downloadJLink = async (
     });
     if (status !== 200) {
         throw new Error(
-            `Unable to download ${jlinkUrls}. Got status code ${status}.`,
+            `Unable to download ${url}. Got status code ${status}.`,
         );
     }
 
