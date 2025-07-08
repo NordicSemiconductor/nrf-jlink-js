@@ -11,6 +11,8 @@ import {
     JLinkVariant,
     saveToFile,
     ArchUrl,
+    platforms,
+    archs,
 } from '../src/common';
 
 const SEGGER_DOWNLOAD_BASE_URL = 'https://www.segger.com/downloads/jlink';
@@ -128,8 +130,6 @@ const getFileFormat = (platform: string) => {
 
 const getFileNames = (rawVersion: string): JLinkVariant => {
     const version = getStandardisedVersion(rawVersion);
-    const platforms = ['darwin', 'linux', 'win32'] as (keyof JLinkVariant)[];
-    const archs = ['arm64', 'x64'] as (keyof ArchUrl)[];
 
     let fileNames = {};
     for (let platform of platforms) {

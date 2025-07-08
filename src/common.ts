@@ -2,16 +2,10 @@ import axios from 'axios';
 import { mkdirSync, createWriteStream } from 'fs';
 import path from 'path';
 
-export interface ArchUrl {
-    arm64: string;
-    x64: string;
-}
-
-export interface JLinkVariant {
-    linux: ArchUrl;
-    darwin: ArchUrl;
-    win32: ArchUrl;
-}
+export const platforms = ['darwin', 'linux', 'win32'] as const;
+export const archs = ['arm64', 'x64'] as const;
+export type ArchUrl = Record<(typeof archs)[number], string>;
+export type JLinkVariant = Record<(typeof platforms)[number], ArchUrl>;
 
 export interface JLinkIndex {
     version: string;
