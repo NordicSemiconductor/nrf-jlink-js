@@ -35,17 +35,17 @@ const doPerVariant = async (
     variants: JLinkVariant,
     action: (value: string) => Promise<string> | string | void,
 ): Promise<JLinkVariant> => {
-    const ret = {};
-    for (let platform in variants) {
-        ret[platform] = {};
-        for (let arch in variants[platform]) {
-            const val = await action(variants[platform][arch]);
-            if (val) {
-                ret[platform][arch] = val;
-            } else {
-                ret[platform][arch] = variants[platform][arch];
-            }
-        }
+    const ret: Partial<JLinkVariant> = {};
+    for (let platform of platforms) {
+        ret[platform] = Object.fromEntries(
+            await Promise.all(
+                archs.map(async arch => [
+                    arch,
+                    (await action(variants[platform][arch])) ||
+                        variants[platform][arch],
+                ]),
+            ),
+        ) as ArchUrl;
     }
     return ret as JLinkVariant;
 };
@@ -131,16 +131,16 @@ const getFileFormat = (platform: string) => {
 const getFileNames = (rawVersion: string): JLinkVariant => {
     const version = getStandardisedVersion(rawVersion);
 
-    let fileNames = {};
+    let fileNames: Partial<JLinkVariant> = {};
     for (let platform of platforms) {
-        fileNames[platform] = {};
-        for (let arch of archs) {
-            fileNames[platform][arch] = `JLink_${platformToJlinkPlatform(
-                platform,
-            )}_V${version.major}${version.minor}${version.patch ?? ''}_${
-                arch == 'x64' ? 'x86_64' : arch
-            }.${getFileFormat(platform)}`;
-        }
+        fileNames[platform] = Object.fromEntries(
+            archs.map(arch => [
+                arch,
+                `JLink_${platformToJlinkPlatform(platform)}_V${version.major}${version.minor}${version.patch ?? ''}_${
+                    arch == 'x64' ? 'x86_64' : arch
+                }.${getFileFormat(platform)}`,
+            ]),
+        ) as ArchUrl;
     }
 
     return fileNames as JLinkVariant;
