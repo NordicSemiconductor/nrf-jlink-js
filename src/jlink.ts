@@ -1,5 +1,4 @@
 import { spawn, execSync, execFile } from 'child_process';
-import { mkdir } from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import semver from 'semver';
@@ -80,6 +79,7 @@ interface Update {
 const downloadJLink = async (
     { jlinkUrls }: JLinkIndex,
     onUpdate?: (update: Update) => void,
+    destinationPath: string = os.tmpdir(),
 ): Promise<string> => {
     const platform = os.platform();
     const arch = os.arch();
@@ -104,13 +104,14 @@ const downloadJLink = async (
     });
     if (status !== 200) {
         throw new Error(
-            `Unable to download ${jlinkUrls}. Got status code ${status}.`,
+            `Unable to download ${url}. Got status code ${status}.`,
         );
     }
 
-    const destinationFile = path.join(os.tmpdir(), path.basename(url));
-    await mkdir(path.dirname(destinationFile), { recursive: true });
-    return await saveToFile(stream, destinationFile);
+    return await saveToFile(
+        stream,
+        path.join(destinationPath, path.basename(url)),
+    );
 };
 
 const installJLink = (
@@ -195,6 +196,9 @@ export const getVersionToInstall = async (
         versionToBeInstalled,
     };
 };
+
+export const downloadAndSaveJLink = (destination: string) =>
+    fetchIndex().then(v => downloadJLink(v, undefined, destination));
 
 export const downloadAndInstallJLink = (onUpdate?: (update: Update) => void) =>
     fetchIndex()

@@ -4,7 +4,6 @@ import path from 'path';
 import axios from 'axios';
 import os from 'os';
 import fs from 'fs';
-import { mkdirSync } from 'fs';
 
 import {
     fetchIndex,
@@ -12,6 +11,8 @@ import {
     JLinkVariant,
     saveToFile,
     ArchUrl,
+    platforms,
+    archs,
 } from '../src/common';
 
 const SEGGER_DOWNLOAD_BASE_URL = 'https://www.segger.com/downloads/jlink';
@@ -34,17 +35,17 @@ const doPerVariant = async (
     variants: JLinkVariant,
     action: (value: string) => Promise<string> | string | void,
 ): Promise<JLinkVariant> => {
-    const ret = {};
-    for (let platform in variants) {
-        ret[platform] = {};
-        for (let arch in variants[platform]) {
-            const val = await action(variants[platform][arch]);
-            if (val) {
-                ret[platform][arch] = val;
-            } else {
-                ret[platform][arch] = variants[platform][arch];
-            }
-        }
+    const ret: Partial<JLinkVariant> = {};
+    for (let platform of platforms) {
+        ret[platform] = Object.fromEntries(
+            await Promise.all(
+                archs.map(async arch => [
+                    arch,
+                    (await action(variants[platform][arch])) ||
+                        variants[platform][arch],
+                ]),
+            ),
+        ) as ArchUrl;
     }
     return ret as JLinkVariant;
 };
@@ -80,11 +81,7 @@ const downloadInstallers = async (
         if (stream.statusMessage === 'OK') {
             console.log('Finished download:', url);
 
-            const destinationFile = path.join(os.tmpdir(), fileName);
-            mkdirSync(path.dirname(destinationFile), { recursive: true });
-            await saveToFile(stream, destinationFile);
-
-            return destinationFile;
+            return await saveToFile(stream, path.join(os.tmpdir(), fileName));
         } else {
             incorrectFiles.push(fileName);
             console.log('Failed to download (check if file exists):', url);
@@ -106,7 +103,7 @@ const getStandardisedVersion = (
 ): { major: string; minor: string; patch?: string } => {
     const regex = /[vV]?(\d+)\.(\d\d)(.{0,1})/;
     const [parsedVersion, major, minor, patch] = rawVersion.match(regex) ?? [];
-    if (!parsedVersion) {
+    if (!parsedVersion || !major || !minor) {
         throw new Error(
             `Unable to parse version ${rawVersion}. Valid formats: v12.34, v1.23a, V1.23a, 12.34, 1.23a`,
         );
@@ -114,7 +111,7 @@ const getStandardisedVersion = (
     return {
         major,
         minor,
-        patch: patch.toLowerCase(),
+        patch: patch?.toLowerCase(),
     };
 };
 
@@ -133,19 +130,17 @@ const getFileFormat = (platform: string) => {
 
 const getFileNames = (rawVersion: string): JLinkVariant => {
     const version = getStandardisedVersion(rawVersion);
-    const platforms = ['darwin', 'linux', 'win32'] as (keyof JLinkVariant)[];
-    const archs = ['arm64', 'x64'] as (keyof ArchUrl)[];
 
-    let fileNames = {};
+    let fileNames: Partial<JLinkVariant> = {};
     for (let platform of platforms) {
-        fileNames[platform] = {};
-        for (let arch of archs) {
-            fileNames[platform][arch] = `JLink_${platformToJlinkPlatform(
-                platform,
-            )}_V${version.major}${version.minor}${version.patch ?? ''}_${
-                arch == 'x64' ? 'x86_64' : arch
-            }.${getFileFormat(platform)}`;
-        }
+        fileNames[platform] = Object.fromEntries(
+            archs.map(arch => [
+                arch,
+                `JLink_${platformToJlinkPlatform(platform)}_V${version.major}${version.minor}${version.patch ?? ''}_${
+                    arch == 'x64' ? 'x86_64' : arch
+                }.${getFileFormat(platform)}`,
+            ]),
+        ) as ArchUrl;
     }
 
     return fileNames as JLinkVariant;

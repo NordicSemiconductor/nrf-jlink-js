@@ -1,3 +1,9 @@
+## Unreleased - Unreleased
+
+### Added
+
+-   Export `installJLink`.
+
 ## 0.0.3 - 2025-06-27
 
 ### Fixed
