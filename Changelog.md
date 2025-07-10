@@ -1,3 +1,9 @@
+## 0.0.5 - 2025-07-10
+
+### Fixed
+
+-   Remove mistaken transpile of file
+
 ## 0.0.4 - 2025-07-10
 
 ### Added
