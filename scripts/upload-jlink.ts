@@ -130,7 +130,6 @@ const getFileFormat = (platform: string) => {
 
 const getFileNames = (rawVersion: string): JLinkVariant => {
     const version = getStandardisedVersion(rawVersion);
-    console.log("Standardised version:", version);
 
     let fileNames: Partial<JLinkVariant> = {};
     for (let platform of platforms) {
@@ -143,8 +142,6 @@ const getFileNames = (rawVersion: string): JLinkVariant => {
             ]),
         ) as ArchUrl;
     }
-
-    console.log("Generated file names:", fileNames);
 
     return fileNames as JLinkVariant;
 };
@@ -213,11 +210,9 @@ const upload = (version: string, files: JLinkVariant) => {
 };
 
 const main = async (version: string) => {
-    console.log("In main start")
     await downloadInstallers(getFileNames(version)).then(files =>
         upload(version, files),
     );
-    console.log("In main end")
 };
 
 const runAsScript = require.main === module;
