@@ -209,10 +209,11 @@ const upload = (version: string, files: JLinkVariant) => {
     });
 };
 
-const main = (version: string) =>
-    downloadInstallers(getFileNames(version)).then(files =>
+const main = async (version: string) => {
+    await downloadInstallers(getFileNames(version)).then(files =>
         upload(version, files),
     );
+};
 
 const runAsScript = require.main === module;
 if (runAsScript) {
@@ -224,5 +225,5 @@ if (runAsScript) {
         process.exit(1);
     }
 
-    await main(version);
+    main(version);
 }
