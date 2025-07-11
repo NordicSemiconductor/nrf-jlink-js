@@ -2,7 +2,12 @@ import {
     downloadAndInstallJLink,
     getVersionToInstall,
     downloadAndSaveJLink,
-    installJLink
+    installJLink,
 } from './jlink';
 
-export { downloadAndInstallJLink, getVersionToInstall, downloadAndSaveJLink, installJLink };
+export {
+    downloadAndInstallJLink,
+    getVersionToInstall,
+    downloadAndSaveJLink,
+    installJLink,
+};
