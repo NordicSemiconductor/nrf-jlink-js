@@ -172,9 +172,7 @@ const uploadFile = async (url: string, data: Buffer) => {
 
 const upload = (version: string, files: JLinkVariant) => {
     if (!process.env.ARTIFACTORY_TOKEN) {
-        throw new Error(
-            'ARTIFACTORY_TOKEN environment variable not set',
-        );
+        throw new Error('ARTIFACTORY_TOKEN environment variable not set');
     }
 
     console.log('Started uploading all JLink variants.');
@@ -226,5 +224,5 @@ if (runAsScript) {
         process.exit(1);
     }
 
-    main(version);
+    await main(version);
 }
