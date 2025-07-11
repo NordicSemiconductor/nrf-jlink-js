@@ -1,5 +1,9 @@
 ## 0.0.6 - 2025-07-11
 
+### Added
+
+-   Added export to `installJLink`
+
 ### Fixed
 
 -   Don't alter `destination` passed to `downloadAndSaveJLink`
