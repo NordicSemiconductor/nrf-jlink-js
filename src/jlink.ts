@@ -79,7 +79,7 @@ interface Update {
 const downloadJLink = async (
     { jlinkUrls }: JLinkIndex,
     onUpdate?: (update: Update) => void,
-    destinationPath: string = os.tmpdir(),
+    destinationFilePath?: string,
 ): Promise<string> => {
     const platform = os.platform();
     const arch = os.arch();
@@ -110,11 +110,11 @@ const downloadJLink = async (
 
     return await saveToFile(
         stream,
-        path.join(destinationPath, path.basename(url)),
+        destinationFilePath || path.join(os.tmpdir(), path.basename(url)),
     );
 };
 
-const installJLink = (
+export const installJLink = (
     installerPath: string,
     onUpdate?: (update: Update) => void,
 ): Promise<void> => {
