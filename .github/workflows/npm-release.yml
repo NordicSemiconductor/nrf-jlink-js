@@ -23,6 +23,6 @@ jobs:
                   cache: 'npm'
             - run: npm ci
             - run: npm run build
-            - run: npm publish --provevance --access public
+            - run: npm publish --provenance --access public
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.WAYLAND_NPM_TOKEN }}
