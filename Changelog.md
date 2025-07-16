@@ -1,3 +1,9 @@
+## 0.0.7 - Unreleased
+
+### Changed
+
+-   `installJLink` now passes the whole `Update` object to `onUpdate`
+
 ## 0.0.6 - 2025-07-11
 
 ### Added

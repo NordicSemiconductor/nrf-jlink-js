@@ -199,10 +199,10 @@ export const getVersionToInstall = async (
 
 export const downloadAndSaveJLink = (
     destination: string,
-    onUpdate?: (percentage: number) => void,
+    onUpdate?: (update: Update) => void,
 ) =>
     fetchIndex().then(v =>
-        downloadJLink(v, update => onUpdate?.(update.percentage), destination),
+        downloadJLink(v, onUpdate, destination),
     );
 
 export const downloadAndInstallJLink = (onUpdate?: (update: Update) => void) =>
