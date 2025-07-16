@@ -1,5 +1,9 @@
 ## 0.0.7 - Unreleased
 
+### Added
+
+-   export for `JLinkUpdate` type
+
 ### Changed
 
 -   `installJLink` now passes the whole `Update` object to `onUpdate`
