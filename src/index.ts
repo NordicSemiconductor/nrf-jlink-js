@@ -3,6 +3,7 @@ import {
     getVersionToInstall,
     downloadAndSaveJLink,
     installJLink,
+    Update as JLinkUpdate,
 } from './jlink';
 
 export {
@@ -10,4 +11,5 @@ export {
     getVersionToInstall,
     downloadAndSaveJLink,
     installJLink,
+    JLinkUpdate,
 };

@@ -71,7 +71,7 @@ const getInstalledJLinkVersion = (): Promise<string> => {
     });
 };
 
-interface Update {
+export interface Update {
     step: 'install' | 'download';
     percentage: number;
 }
