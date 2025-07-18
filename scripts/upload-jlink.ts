@@ -36,17 +36,30 @@ const doPerVariant = async (
     action: (value: string) => Promise<string> | string | void,
 ): Promise<JLinkVariant> => {
     const ret: Partial<JLinkVariant> = {};
+    const promises: Promise<void>[] = [];
     for (let platform of platforms) {
         ret[platform] = Object.fromEntries(
-            await Promise.all(
-                archs.map(async arch => [
-                    arch,
-                    (await action(variants[platform][arch])) ||
-                        variants[platform][arch],
-                ]),
-            ),
+            archs.map(arch => [arch, '']),
         ) as ArchUrl;
+        promises.push(
+            ...archs.map(
+                async arch =>
+                    new Promise<void>(async (resolve, reject) => {
+                        const result = await action(variants[platform][arch]);
+                        if (ret[platform]?.[arch] !== undefined) {
+                            if (result) {
+                                ret[platform][arch] = result;
+                            } else {
+                                ret[platform][arch] = 'Incorrect';
+                            }
+                            resolve();
+                        }
+                        reject();
+                    }),
+            ),
+        );
     }
+    await Promise.all(promises);
     return ret as JLinkVariant;
 };
 
@@ -79,9 +92,13 @@ const downloadInstallers = async (
         }
 
         if (stream.statusMessage === 'OK') {
-            console.log('Finished download:', url);
+            const toPath = path.join(os.tmpdir(), fileName);
+            console.log('Saving to:', toPath);
 
-            return await saveToFile(stream, path.join(os.tmpdir(), fileName));
+            const savedFile = await saveToFile(stream, toPath);
+
+            console.log('Finished for file:', fileName);
+            return savedFile;
         } else {
             incorrectFiles.push(fileName);
             console.log('Failed to download (check if file exists):', url);
