@@ -1,3 +1,9 @@
+## 0.0.8 - 2025-07-21
+
+### Fixed
+
+-   Use artifactory download url to avoid redirects
+
 ## 0.0.7 - 2025-07-18
 
 ### Added
