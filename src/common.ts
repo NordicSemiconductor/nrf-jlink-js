@@ -23,7 +23,7 @@ const fetchJSON = async <T>(url: string): Promise<T> => {
 };
 
 const indexUrl =
-    'https://files.nordicsemi.com/artifactory/swtools/external/ncd/jlink/index.json';
+    'https://files.nordicsemi.com/ui/api/v1/download?isNativeBrowsing=true&repoKey=swtools&path=external/ncd/jlink/index.json';
 export const fetchIndex = async () => {
     const res = await fetchJSON<JLinkIndex>(indexUrl);
 
