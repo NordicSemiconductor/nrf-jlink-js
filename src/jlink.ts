@@ -94,6 +94,9 @@ const downloadJLink = async (
     }
     const { status, data: stream } = await axios.get(url, {
         responseType: 'stream',
+        headers: {
+            Range: 'bytes=0-',
+        },
         onDownloadProgress: ({ loaded, total }) =>
             loaded &&
             total &&
@@ -102,7 +105,7 @@ const downloadJLink = async (
                 percentage: Number(((loaded / total) * 100).toFixed(2)),
             }),
     });
-    if (status !== 200) {
+    if (status !== 200 && status !== 206) {
         throw new Error(
             `Unable to download ${url}. Got status code ${status}.`,
         );
@@ -200,10 +203,7 @@ export const getVersionToInstall = async (
 export const downloadAndSaveJLink = (
     destination: string,
     onUpdate?: (update: Update) => void,
-) =>
-    fetchIndex().then(v =>
-        downloadJLink(v, onUpdate, destination),
-    );
+) => fetchIndex().then(v => downloadJLink(v, onUpdate, destination));
 
 export const downloadAndInstallJLink = (onUpdate?: (update: Update) => void) =>
     fetchIndex()

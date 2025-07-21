@@ -187,6 +187,8 @@ const uploadFile = async (url: string, data: Buffer) => {
     }
 };
 
+const ARTIFACTORY_BASE_DOWNLOAD_URL =
+    'https://files.nordicsemi.com/ui/api/v1/download?isNativeBrowsing=true&repoKey=swtools&path=external/ncd/jlink';
 const upload = (version: string, files: JLinkVariant) => {
     if (!process.env.ARTIFACTORY_TOKEN) {
         throw new Error('ARTIFACTORY_TOKEN environment variable not set');
@@ -199,7 +201,7 @@ const upload = (version: string, files: JLinkVariant) => {
         const jlinkUrls = await doPerVariant(files, async filePath => {
             const fileName = path.basename(filePath);
             console.log('Started upload:', fileName);
-            const targetUrl = `${ARTIFACTORY_UPLOAD_BASE_URL}/${fileName}`;
+            const targetUrl = `${ARTIFACTORY_BASE_DOWNLOAD_URL}/${fileName}`;
             await uploadFile(targetUrl, fs.readFileSync(filePath));
             fs.rmSync(filePath);
             console.log('Finished upload:', fileName);

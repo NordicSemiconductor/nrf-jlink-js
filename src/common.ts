@@ -13,8 +13,13 @@ export interface JLinkIndex {
 }
 
 const fetchJSON = async <T>(url: string): Promise<T> => {
-    const { status, data } = await axios.get(url, { responseType: 'json' });
-    if (status !== 200) {
+    const { status, data } = await axios.get(url, {
+        responseType: 'json',
+        headers: {
+            Range: 'bytes=0-',
+        },
+    });
+    if (status !== 200 && status !== 206) {
         throw new Error(
             `Unable to fetch file from ${indexUrl}. Got status code ${status}.`,
         );
@@ -23,7 +28,7 @@ const fetchJSON = async <T>(url: string): Promise<T> => {
 };
 
 const indexUrl =
-    'https://files.nordicsemi.com/artifactory/swtools/external/ncd/jlink/index.json';
+    'https://files.nordicsemi.com/ui/api/v1/download?isNativeBrowsing=true&repoKey=swtools&path=external/ncd/jlink/index.json';
 export const fetchIndex = async () => {
     const res = await fetchJSON<JLinkIndex>(indexUrl);
 
