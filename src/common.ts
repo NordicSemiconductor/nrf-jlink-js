@@ -13,8 +13,13 @@ export interface JLinkIndex {
 }
 
 const fetchJSON = async <T>(url: string): Promise<T> => {
-    const { status, data } = await axios.get(url, { responseType: 'json' });
-    if (status !== 200) {
+    const { status, data } = await axios.get(url, {
+        responseType: 'json',
+        headers: {
+            Range: 'bytes=0-',
+        },
+    });
+    if (status !== 200 && status !== 206) {
         throw new Error(
             `Unable to fetch file from ${indexUrl}. Got status code ${status}.`,
         );
