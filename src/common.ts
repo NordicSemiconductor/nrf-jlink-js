@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { mkdirSync, createWriteStream } from 'fs';
+import { mkdirSync, writeFileSync } from 'fs';
 import path from 'path';
 
 export const platforms = ['darwin', 'linux', 'win32'] as const;
@@ -13,18 +12,17 @@ export interface JLinkIndex {
 }
 
 const fetchJSON = async <T>(url: string): Promise<T> => {
-    const { status, data } = await axios.get(url, {
-        responseType: 'json',
+    const response = await fetch(url, {
         headers: {
             Range: 'bytes=0-',
         },
     });
-    if (status !== 200 && status !== 206) {
+    if (!response.ok) {
         throw new Error(
             `Unable to fetch file from ${indexUrl}. Got status code ${status}.`,
         );
     }
-    return data;
+    return response.json();
 };
 
 const indexUrl =
@@ -44,19 +42,17 @@ export const fetchIndex = async () => {
     return res;
 };
 
-export const saveToFile = (
-    stream: NodeJS.ReadableStream,
+export const saveToFile = async (
     destinationFile: string,
+    data: Buffer,
 ): Promise<string> => {
     mkdirSync(path.dirname(destinationFile), { recursive: true });
-    return new Promise((resolve, reject) => {
-        const file = createWriteStream(destinationFile);
-        stream.pipe(file);
-        stream.on('error', reject);
-        stream.on('end', () => {
-            file.end(() => {
-                return resolve(destinationFile);
-            });
-        });
-    });
+    try {
+        writeFileSync(destinationFile, data);
+    } catch (e) {
+        throw new Error(
+            `Unable to write file to ${destinationFile}. Error: ${e}`,
+        );
+    }
+    return destinationFile;
 };

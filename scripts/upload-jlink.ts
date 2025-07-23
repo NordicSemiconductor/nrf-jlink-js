@@ -1,7 +1,6 @@
 #!/usr/bin/env ts-node
 
 import path from 'path';
-import axios from 'axios';
 import os from 'os';
 import fs from 'fs';
 
@@ -75,39 +74,44 @@ const downloadInstallers = async (
 
         console.log('Started download:', url);
 
-        const { status, data: stream } = await axios.postForm(
-            url,
-            { accept_license_agreement: 'accepted' },
-            {
-                responseType: 'stream',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
             },
+            body: new URLSearchParams({
+                accept_license_agreement: 'accepted',
+            }).toString(),
+            redirect: 'manual',
+        });
+
+        if (!response.ok) {
+            if (response.status === 302) {
+                incorrectFiles.push(fileName);
+                console.log('File does not exist:', url);
+                return 'Not found';
+            } else {
+                console.log(response);
+                throw new Error(
+                    `Unable to download ${url}. Got status code ${response.status}.`,
+                );
+            }
+        }
+
+        const toPath = path.join(os.tmpdir(), fileName);
+        console.log('Saving to:', toPath);
+
+        const savedFile = await saveToFile(
+            toPath,
+            Buffer.from(await response.arrayBuffer()),
         );
-        if (status !== 200) {
-            throw new Error(
-                `Unable to download ${url}. Got status code ${status}.`,
-            );
-        }
 
-        if (stream.statusMessage === 'OK') {
-            const toPath = path.join(os.tmpdir(), fileName);
-            console.log('Saving to:', toPath);
-
-            const savedFile = await saveToFile(stream, toPath);
-
-            console.log('Finished for file:', fileName);
-            return savedFile;
-        } else {
-            incorrectFiles.push(fileName);
-            console.log('Failed to download (check if file exists):', url);
-            return 'Incorrect';
-        }
+        console.log('Finished for file:', fileName);
+        return savedFile;
     });
 
     if (incorrectFiles.length > 0) {
-        throw new Error(`Failed to download: ${incorrectFiles.join(', ')}`);
+        throw new Error(`Files not found: [${incorrectFiles.join(', ')}]`);
     }
 
     console.log('Finished downloading all JLink variants.');
@@ -201,7 +205,10 @@ const upload = (version: string, files: JLinkVariant) => {
         const jlinkUrls = await doPerVariant(files, async filePath => {
             const fileName = path.basename(filePath);
             console.log('Started upload:', fileName);
-            await uploadFile(`${ARTIFACTORY_UPLOAD_BASE_URL}/${fileName}`, fs.readFileSync(filePath));
+            await uploadFile(
+                `${ARTIFACTORY_UPLOAD_BASE_URL}/${fileName}`,
+                fs.readFileSync(filePath),
+            );
             fs.rmSync(filePath);
             console.log('Finished upload:', fileName);
             return `${ARTIFACTORY_BASE_DOWNLOAD_URL}/${fileName}`;
