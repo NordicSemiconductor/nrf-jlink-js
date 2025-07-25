@@ -78,7 +78,8 @@ export interface Update {
 const downloadJLink = async (
     { jlinkUrls }: JLinkIndex,
     onUpdate?: (update: Update) => void,
-    destinationFilePath?: string,
+    destinationDir: string = os.tmpdir(),
+    destinationFileName?: string,
 ): Promise<string> => {
     const platform = os.platform();
     const arch = os.arch();
@@ -136,7 +137,7 @@ const downloadJLink = async (
     });
 
     return await saveToFile(
-        destinationFilePath || path.join(os.tmpdir(), path.basename(url)),
+        path.join(destinationDir, destinationFileName || path.basename(url)),
         Buffer.from(chunksAll),
     );
 };
@@ -225,9 +226,10 @@ export const getVersionToInstall = async (
 };
 
 export const downloadAndSaveJLink = (
-    destination: string,
+    destinationDir: string,
+    destinationFileName?: string,
     onUpdate?: (update: Update) => void,
-) => fetchIndex().then(v => downloadJLink(v, onUpdate, destination));
+) => fetchIndex().then(v => downloadJLink(v, onUpdate, destinationDir, destinationFileName));
 
 export const downloadAndInstallJLink = (onUpdate?: (update: Update) => void) =>
     fetchIndex()
