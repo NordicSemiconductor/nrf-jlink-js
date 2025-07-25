@@ -1,3 +1,8 @@
+## 0.0.10 - Unreleased
+
+### Changed
+
+-   `destination` parameter in `downloadAndSaveJLink` split into `destinationDir` and optional `destinationFileName`
 ## 0.0.9 - 2025-07-23
 
 ### Changed
