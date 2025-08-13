@@ -1,3 +1,9 @@
+## Unreleased
+
+### Fixed
+
+-    windows: Join JLink executable directory with JLink executable.
+
 ## 0.0.10 - 2025-07-28
 
 ### Changed
