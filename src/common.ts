@@ -19,7 +19,7 @@ const fetchJSON = async <T>(url: string): Promise<T> => {
     });
     if (!response.ok) {
         throw new Error(
-            `Unable to fetch file from ${indexUrl}. Got status code ${status}.`,
+            `Unable to fetch file from ${indexUrl}. Got status code ${status}.`
         );
     }
     return response.json();
@@ -44,14 +44,14 @@ export const fetchIndex = async () => {
 
 export const saveToFile = async (
     destinationFile: string,
-    data: Buffer,
+    data: string | NodeJS.ArrayBufferView
 ): Promise<string> => {
     mkdirSync(path.dirname(destinationFile), { recursive: true });
     try {
         writeFileSync(destinationFile, data);
     } catch (e) {
         throw new Error(
-            `Unable to write file to ${destinationFile}. Error: ${e}`,
+            `Unable to write file to ${destinationFile}. Error: ${e}`
         );
     }
     return destinationFile;

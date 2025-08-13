@@ -1,28 +1,44 @@
-import { spawn, execSync, execFile } from 'child_process';
+import { spawn, execSync, execFile, ChildProcess, exec } from 'child_process';
+import { mkdir } from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import semver from 'semver';
+import { existsSync } from 'fs';
 
 import { fetchIndex, saveToFile, JLinkIndex } from './common';
 
-const getJLinkExePath = () => {
+function winRegQuery(key: string): string {
+    if (process.platform !== 'win32') {
+        throw new Error('Unsupported platform');
+    }
+
+    let reg = path.resolve(
+        process.env.SystemRoot ?? 'C:\\Windows',
+        'System32',
+        'reg.exe'
+    );
+    if (!existsSync(reg)) {
+        reg = 'reg.exe';
+    }
+
+    return execSync(`${reg} query ${key}`).toString().trim();
+}
+
+const getJLinkExePath = (): string => {
     switch (os.platform()) {
         case 'win32':
-            const path = execSync(
-                'reg query HKEY_CURRENT_USER\\Software\\SEGGER\\J-Link /v InstallPath',
-            ).toString();
-            const pathAlternative = execSync(
-                'reg query HKEY_LOCAL_MACHINE\\Software\\SEGGER\\J-Link /v InstallPath',
-            ).toString();
-            if (!path && !pathAlternative) {
-                throw new Error('JLink not installed');
-            } else if (
-                (path && typeof path !== 'string') ||
-                (pathAlternative && typeof pathAlternative !== 'string')
-            ) {
-                throw new Error('Unable to read JLink install path');
+            let jlinkDir = winRegQuery(
+                'HKEY_CURRENT_USER\\Software\\SEGGER\\J-Link /v InstallPath'
+            );
+            if (!jlinkDir) {
+                jlinkDir = winRegQuery(
+                    'HKEY_LOCAL_MACHINE\\Software\\SEGGER\\J-Link /v InstallPath'
+                );
             }
-            return (path || pathAlternative) as string;
+            if (!jlinkDir) {
+                throw new Error('JLink not installed');
+            }
+            return path.resolve(jlinkDir, 'JLink.exe');
         case 'linux':
         case 'darwin':
             return 'JLinkExe';
@@ -31,41 +47,46 @@ const getJLinkExePath = () => {
     }
 };
 
+function killProcess(
+    childProcess?: ChildProcess | number,
+    signal?: number | NodeJS.Signals | undefined
+): void {
+    const pid =
+        typeof childProcess === 'number' ? childProcess : childProcess?.pid;
+    if (!pid) {
+        return;
+    }
+    if (process.platform === 'win32') {
+        spawn('taskkill', ['/pid', `${pid}`, '/f', '/t']);
+    } else {
+        process.kill(pid, signal);
+    }
+}
+
 const getInstalledJLinkVersion = (): Promise<string> => {
     return new Promise((resolve, reject) => {
         const jlinkExeCmd = spawn(getJLinkExePath(), ['-NoGUI', '1'], {
             shell: true,
         });
+        let output = '';
         const timeout = setTimeout(() => {
-            const pid = jlinkExeCmd?.pid;
-            if (pid) {
-                if (process.platform === 'win32') {
-                    spawn('taskkill', ['/pid', `${pid}`, '/f', '/t']);
-                } else {
-                    process.kill(pid);
-                }
-            }
-            reject('Failed to read Jlink Version');
+            killProcess(jlinkExeCmd.pid);
+            reject(
+                new Error(
+                    `Timeout while waiting for J-Link version. Output: ${output}`
+                )
+            );
         }, 5000);
 
+        const versionRegExp = /^SEGGER J-Link Commander V([0-9a-z.]+) .*$/m;
         jlinkExeCmd.stdout.on('data', (data: string) => {
-            const versionRegExp = /DLL version (V\d+\.\d+\w*),.*/;
-            const versionMatch = data.toString().match(versionRegExp);
-            if (versionMatch?.[1]) {
-                jlinkExeCmd.stdin.write(' exit\n');
-                resolve(versionMatch[1].toLowerCase());
-            } else if (data.toString().includes('Connecting to')) {
-                jlinkExeCmd.stdin.write(' exit\n');
-                reject('Failed to read Jlink Version');
+            output += data.toString();
+            const match = output.match(versionRegExp);
+            if (match?.[1]) {
+                clearTimeout(timeout);
+                killProcess(jlinkExeCmd.pid);
+                resolve(match[1]);
             }
-        });
-
-        jlinkExeCmd.stderr.on('data', () => {
-            reject('Failed to read Jlink Version');
-        });
-
-        jlinkExeCmd.on('close', () => {
-            clearTimeout(timeout);
         });
     });
 };
@@ -79,7 +100,7 @@ const downloadJLink = async (
     { jlinkUrls }: JLinkIndex,
     onUpdate?: (update: Update) => void,
     destinationDir: string = os.tmpdir(),
-    destinationFileName?: string,
+    destinationFileName?: string
 ): Promise<string> => {
     const platform = os.platform();
     const arch = os.arch();
@@ -100,7 +121,7 @@ const downloadJLink = async (
 
     if (!response.ok) {
         throw new Error(
-            `Unable to download ${url}. Got status code ${status}.`,
+            `Unable to download ${url}. Got status code ${status}.`
         );
     }
 
@@ -138,13 +159,13 @@ const downloadJLink = async (
 
     return await saveToFile(
         path.join(destinationDir, destinationFileName || path.basename(url)),
-        Buffer.from(chunksAll),
+        Buffer.from(chunksAll)
     );
 };
 
 export const installJLink = (
     installerPath: string,
-    onUpdate?: (update: Update) => void,
+    onUpdate?: (update: Update) => void
 ): Promise<void> => {
     let command;
     let args: string[];
@@ -193,7 +214,7 @@ const convertToSemverVersion = (version: string) => {
 const isValidVersion = (installedVersion: string, expectedVersion: string) =>
     semver.gte(
         convertToSemverVersion(installedVersion),
-        convertToSemverVersion(expectedVersion),
+        convertToSemverVersion(expectedVersion)
     );
 
 interface JLinkState {
@@ -204,12 +225,12 @@ interface JLinkState {
 }
 
 export const getVersionToInstall = async (
-    fallbackVersion?: string,
+    fallbackVersion?: string
 ): Promise<JLinkState> => {
     const versionToBeInstalled =
         (await fetchIndex().catch(() => undefined))?.version ?? fallbackVersion;
     const installedVersion = await getInstalledJLinkVersion().catch(
-        () => undefined,
+        () => undefined
     );
     const installed = !!installedVersion;
     const outdated =
@@ -228,8 +249,11 @@ export const getVersionToInstall = async (
 export const downloadAndSaveJLink = (
     destinationDir: string,
     destinationFileName?: string,
-    onUpdate?: (update: Update) => void,
-) => fetchIndex().then(v => downloadJLink(v, onUpdate, destinationDir, destinationFileName));
+    onUpdate?: (update: Update) => void
+) =>
+    fetchIndex().then(v =>
+        downloadJLink(v, onUpdate, destinationDir, destinationFileName)
+    );
 
 export const downloadAndInstallJLink = (onUpdate?: (update: Update) => void) =>
     fetchIndex()
