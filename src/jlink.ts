@@ -8,21 +8,21 @@ import { fetchIndex, saveToFile, JLinkIndex } from './common';
 const getJLinkExePath = () => {
     switch (os.platform()) {
         case 'win32':
-            const path = execSync(
+            const jlinkPath = execSync(
                 'reg query HKEY_CURRENT_USER\\Software\\SEGGER\\J-Link /v InstallPath',
             ).toString();
-            const pathAlternative = execSync(
+            const jlinkPathAlternative = execSync(
                 'reg query HKEY_LOCAL_MACHINE\\Software\\SEGGER\\J-Link /v InstallPath',
             ).toString();
-            if (!path && !pathAlternative) {
+            if (!jlinkPath && !jlinkPathAlternative) {
                 throw new Error('JLink not installed');
             } else if (
-                (path && typeof path !== 'string') ||
-                (pathAlternative && typeof pathAlternative !== 'string')
+                (jlinkPath && typeof jlinkPath !== 'string') ||
+                (jlinkPathAlternative && typeof jlinkPathAlternative !== 'string')
             ) {
                 throw new Error('Unable to read JLink install path');
             }
-            return (path || pathAlternative) as string;
+            return path.join((jlinkPath || jlinkPathAlternative) as string, 'JLinkExe.exe');
         case 'linux':
         case 'darwin':
             return 'JLinkExe';
@@ -33,9 +33,10 @@ const getJLinkExePath = () => {
 
 const getInstalledJLinkVersion = (): Promise<string> => {
     return new Promise((resolve, reject) => {
-        const jlinkExeCmd = spawn(getJLinkExePath(), ['-NoGUI', '1'], {
+        const jlinkExeCmd = spawn(getJLinkExePath(), ['-NoGUI', '1', '-USB', '0'], {
             shell: true,
         });
+
         const timeout = setTimeout(() => {
             const pid = jlinkExeCmd?.pid;
             if (pid) {
