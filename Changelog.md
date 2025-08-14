@@ -1,8 +1,16 @@
+## 0.0.11 - 2025-08-14
+
+### Fixed
+
+-   Fixed executing JLink.exe to check current installed version
+
 ## 0.0.10 - 2025-07-28
 
 ### Changed
 
--   `destination` parameter in `downloadAndSaveJLink` split into `destinationDir` and optional `destinationFileName`
+-   `destination` parameter in `downloadAndSaveJLink` split into
+    `destinationDir` and optional `destinationFileName`
+
 ## 0.0.9 - 2025-07-23
 
 ### Changed
@@ -87,4 +95,3 @@
 ## 0.0.0-alpha1 - 2025-06-24
 
 -   First alpha release.
-
