@@ -65,7 +65,7 @@ function killProcess(
 
 const getInstalledJLinkVersion = (): Promise<string> => {
     return new Promise((resolve, reject) => {
-        const jlinkExeCmd = spawn(getJLinkExePath(), ['-NoGUI', '1'], {
+        const jlinkExeCmd = spawn(getJLinkExePath(), ['-NoGUI', '1', '-USB', '0'], {
             shell: true,
         });
         let output = '';
