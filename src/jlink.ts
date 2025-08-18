@@ -1,11 +1,11 @@
 import { spawn, execSync, execFile, ChildProcess, exec } from 'child_process';
-import { mkdir } from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import semver from 'semver';
 import { existsSync } from 'fs';
 
 import { fetchIndex, saveToFile, JLinkIndex } from './common';
+import { promisify } from 'util';
 
 function winRegQuery(key: string): string {
     if (process.platform !== 'win32') {
@@ -48,48 +48,17 @@ const getJLinkExePath = (): string => {
     }
 };
 
-function killProcess(
-    childProcess?: ChildProcess | number,
-    signal?: number | NodeJS.Signals | undefined
-): void {
-    const pid =
-        typeof childProcess === 'number' ? childProcess : childProcess?.pid;
-    if (!pid) {
-        return;
-    }
-    if (process.platform === 'win32') {
-        spawn('taskkill', ['/pid', `${pid}`, '/f', '/t']);
-    } else {
-        process.kill(pid, signal);
-    }
-}
+const getInstalledJLinkVersion = async (): Promise<string> => {
+    const output = await promisify(exec)(
+        `${getJLinkExePath()} -CommandFile foo`
+    ).catch(e => e);
 
-const getInstalledJLinkVersion = (): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const jlinkExeCmd = spawn(getJLinkExePath(), ['-NoGUI', '1', '-USB', '0'], {
-            shell: true,
-        });
-        let output = '';
-        const timeout = setTimeout(() => {
-            killProcess(jlinkExeCmd.pid);
-            reject(
-                new Error(
-                    `Timeout while waiting for J-Link version. Output: ${output}`
-                )
-            );
-        }, 5000);
-
-        const versionRegExp = /^SEGGER J-Link Commander V([0-9a-z.]+) .*$/m;
-        jlinkExeCmd.stdout.on('data', (data: string) => {
-            output += data.toString();
-            const match = output.match(versionRegExp);
-            if (match?.[1]) {
-                clearTimeout(timeout);
-                killProcess(jlinkExeCmd.pid);
-                resolve(match[1]);
-            }
-        });
-    });
+    const versionRegExp = /^SEGGER J-Link Commander V([0-9a-z.]+) .*$/m;
+    const match = output.stdout.match(versionRegExp)?.[1];
+    if (!match) {
+        throw new Error("Couldn't get jlink version.");
+    }
+    return `v${match}`;
 };
 
 export interface Update {
