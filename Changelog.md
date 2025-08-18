@@ -1,3 +1,13 @@
+## 0.9.0 - 2025-08-18
+
+### Changed
+
+-   `installedVersion` and `versionToBeInstalled` now have the same format
+
+### Fixed
+
+-   Windows: now able to check installed JLink version
+
 ## 0.0.11 - 2025-08-14
 
 ### Fixed

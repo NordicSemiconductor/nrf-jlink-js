@@ -1,6 +1,6 @@
 {
     "name": "@nordicsemiconductor/nrf-jlink-js",
-    "version": "0.0.11",
+    "version": "0.9.0",
     "main": "dist",
     "types": "dist",
     "files": [
