@@ -1,11 +1,11 @@
 import { spawn, execSync, execFile, ChildProcess, exec } from 'child_process';
-import { mkdir } from 'fs/promises';
 import os from 'os';
-import path, { basename, dirname } from 'path';
+import path, { join } from 'path';
 import semver from 'semver';
 import { existsSync } from 'fs';
 
 import { fetchIndex, saveToFile, JLinkIndex } from './common';
+import { promisify } from 'util';
 
 function winRegQuery(key: string): string {
     if (process.platform !== 'win32') {
@@ -27,19 +27,19 @@ function winRegQuery(key: string): string {
 const getJLinkExePath = (): string => {
     switch (os.platform()) {
         case 'win32':
-            let jlinkDir: string | undefined = winRegQuery(
+            let cwd: string | undefined = winRegQuery(
                 'HKEY_CURRENT_USER\\Software\\SEGGER\\J-Link /v InstallPath'
             );
-            if (!jlinkDir) {
-                jlinkDir = winRegQuery(
+            if (!cwd) {
+                cwd = winRegQuery(
                     'HKEY_LOCAL_MACHINE\\Software\\SEGGER\\J-Link /v InstallPath'
                 );
             }
-            jlinkDir = (/InstallPath\s+\w+\s+(.*)/.exec(jlinkDir) ?? [])[1];
-            if (!jlinkDir) {
+            cwd = (/InstallPath\s+\w+\s+(.*)/.exec(cwd) ?? [])[1];
+            if (!cwd) {
                 throw new Error('JLink not installed');
             }
-            return path.resolve(jlinkDir, 'JLink.exe');
+            return `"${join(cwd, 'JLink.exe')}"`;
         case 'linux':
         case 'darwin':
             return 'JLinkExe';
@@ -64,39 +64,17 @@ function killProcess(
     }
 }
 
-const getInstalledJLinkVersion = (): Promise<string> => {
-    const jlinkExe = getJLinkExePath();
-    return new Promise((resolve, reject) => {
-        const jlinkExeCmd = spawn(
-            basename(jlinkExe),
-            ['-NoGUI', '1', '-USB', '0'],
-            {
-                shell: false,
-                cwd: dirname(jlinkExe),
-            }
-        );
-        let output = '';
-        const timeout = setTimeout(() => {
-            killProcess(jlinkExeCmd.pid);
-            reject(
-                new Error(
-                    `Timeout while waiting for J-Link version. Output: ${output}`
-                )
-            );
-        }, 5000);
+const getInstalledJLinkVersion = async (): Promise<string> => {
+    const output = await promisify(exec)(
+        `${getJLinkExePath()} -CommandFile foo`
+    ).catch(e => e);
 
-        const versionRegExp = /^SEGGER J-Link Commander V([0-9a-z.]+) .*$/m;
-        jlinkExeCmd.stdout.on('data', (data: string) => {
-            output += data.toString();
-            console.log({ output });
-            const match = output.match(versionRegExp);
-            if (match?.[1]) {
-                clearTimeout(timeout);
-                killProcess(jlinkExeCmd.pid);
-                resolve(match[1]);
-            }
-        });
-    });
+    const versionRegExp = /^SEGGER J-Link Commander V([0-9a-z.]+) .*$/m;
+    const match = output.stdout.match(versionRegExp)?.[1];
+    if (!match) {
+        throw new Error("Couldn't get jlink version.");
+    }
+    return match;
 };
 
 export interface Update {
