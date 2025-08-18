@@ -27,18 +27,19 @@ function winRegQuery(key: string): string {
 const getJLinkExePath = (): string => {
     switch (os.platform()) {
         case 'win32':
-            let jlinkDir = winRegQuery(
+            let cwd: string | undefined = winRegQuery(
                 'HKEY_CURRENT_USER\\Software\\SEGGER\\J-Link /v InstallPath'
             );
-            if (!jlinkDir) {
-                jlinkDir = winRegQuery(
+            if (!cwd) {
+                cwd = winRegQuery(
                     'HKEY_LOCAL_MACHINE\\Software\\SEGGER\\J-Link /v InstallPath'
                 );
             }
-            if (!jlinkDir) {
+            cwd = (/InstallPath\s+\w+\s+(.*)/.exec(cwd) ?? [])[1];
+            if (!cwd) {
                 throw new Error('JLink not installed');
             }
-            return path.resolve(jlinkDir, 'JLink.exe');
+            return `"${path.join(cwd, 'JLink.exe')}"`;
         case 'linux':
         case 'darwin':
             return 'JLinkExe';
