@@ -1,7 +1,7 @@
 import { spawn, execSync, execFile, ChildProcess, exec } from 'child_process';
 import { mkdir } from 'fs/promises';
 import os from 'os';
-import path from 'path';
+import path, { basename, dirname } from 'path';
 import semver from 'semver';
 import { existsSync } from 'fs';
 
@@ -27,7 +27,7 @@ function winRegQuery(key: string): string {
 const getJLinkExePath = (): string => {
     switch (os.platform()) {
         case 'win32':
-            let jlinkDir = winRegQuery(
+            let jlinkDir: string | undefined = winRegQuery(
                 'HKEY_CURRENT_USER\\Software\\SEGGER\\J-Link /v InstallPath'
             );
             if (!jlinkDir) {
@@ -35,6 +35,7 @@ const getJLinkExePath = (): string => {
                     'HKEY_LOCAL_MACHINE\\Software\\SEGGER\\J-Link /v InstallPath'
                 );
             }
+            jlinkDir = (/InstallPath\s+\w+\s+(.*)/.exec(jlinkDir) ?? [])[1];
             if (!jlinkDir) {
                 throw new Error('JLink not installed');
             }
@@ -64,10 +65,16 @@ function killProcess(
 }
 
 const getInstalledJLinkVersion = (): Promise<string> => {
+    const jlinkExe = getJLinkExePath();
     return new Promise((resolve, reject) => {
-        const jlinkExeCmd = spawn(getJLinkExePath(), ['-NoGUI', '1', '-USB', '0'], {
-            shell: true,
-        });
+        const jlinkExeCmd = spawn(
+            basename(jlinkExe),
+            ['-NoGUI', '1', '-USB', '0'],
+            {
+                shell: false,
+                cwd: dirname(jlinkExe),
+            }
+        );
         let output = '';
         const timeout = setTimeout(() => {
             killProcess(jlinkExeCmd.pid);
@@ -81,6 +88,7 @@ const getInstalledJLinkVersion = (): Promise<string> => {
         const versionRegExp = /^SEGGER J-Link Commander V([0-9a-z.]+) .*$/m;
         jlinkExeCmd.stdout.on('data', (data: string) => {
             output += data.toString();
+            console.log({ output });
             const match = output.match(versionRegExp);
             if (match?.[1]) {
                 clearTimeout(timeout);
