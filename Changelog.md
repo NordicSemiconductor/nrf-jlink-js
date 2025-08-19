@@ -1,3 +1,9 @@
+## 0.9.1 - 2025-08-19
+
+### Fixed
+
+-   Windows: install previously did not successfully execute installer file.
+
 ## 0.9.0 - 2025-08-18
 
 ### Changed

@@ -149,7 +149,7 @@ export const installJLink = (
             args = ['sh', '-c', `dpkg -i "${installerPath}"`];
             break;
         case 'win32':
-            command = `"${installerPath}"`;
+            command = installerPath;
             break;
         default:
             throw new Error('Invalid platform');
