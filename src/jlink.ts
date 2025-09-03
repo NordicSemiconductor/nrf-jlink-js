@@ -194,11 +194,17 @@ interface JLinkState {
     installedVersion?: string;
 }
 
-export const getVersionToInstall = async (
-    fallbackVersion?: string
-): Promise<JLinkState> => {
-    const versionToBeInstalled =
-        (await fetchIndex().catch(() => undefined))?.version ?? fallbackVersion;
+export const getVersionToInstall = async ({
+    fallbackVersion,
+    checkOnline = true,
+}: {
+    fallbackVersion?: string;
+    checkOnline?: boolean;
+} = {}): Promise<JLinkState> => {
+    const onlineRecommendedVersion = checkOnline
+        ? (await fetchIndex().catch(() => undefined))?.version
+        : undefined;
+    const versionToBeInstalled = onlineRecommendedVersion ?? fallbackVersion;
     const installedVersion = await getInstalledJLinkVersion().catch(
         () => undefined
     );
