@@ -13,6 +13,7 @@ import semver from 'semver';
 import { promisify } from 'util';
 import { fetchIndex, JLinkIndex, saveToFile } from './common';
 import { download } from './net';
+import type { OnUpdate } from './update';
 
 function winRegQuery(key: string): string {
     if (process.platform !== 'win32') {
@@ -68,14 +69,9 @@ const getInstalledJLinkVersion = async (): Promise<string> => {
     return `v${match}`;
 };
 
-export interface Update {
-    step: 'install' | 'download';
-    percentage: number;
-}
-
 const downloadJLink = async (
     { jlinkUrls }: JLinkIndex,
-    onUpdate?: (update: Update) => void,
+    onUpdate?: OnUpdate,
     destinationDir: string = os.tmpdir(),
     destinationFileName?: string
 ): Promise<string> => {
@@ -101,7 +97,7 @@ const downloadJLink = async (
 
 export const installJLink = (
     installerPath: string,
-    onUpdate?: (update: Update) => void
+    onUpdate?: OnUpdate
 ): Promise<void> => {
     let command;
     let args: string[];
@@ -192,13 +188,13 @@ export const getVersionToInstall = async ({
 export const downloadAndSaveJLink = (
     destinationDir: string,
     destinationFileName?: string,
-    onUpdate?: (update: Update) => void
+    onUpdate?: OnUpdate
 ) =>
     fetchIndex().then(v =>
         downloadJLink(v, onUpdate, destinationDir, destinationFileName)
     );
 
-export const downloadAndInstallJLink = (onUpdate?: (update: Update) => void) =>
+export const downloadAndInstallJLink = (onUpdate?: OnUpdate) =>
     fetchIndex()
         .then(v => downloadJLink(v, onUpdate))
         .then(v => installJLink(v, onUpdate));

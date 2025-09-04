@@ -9,5 +9,6 @@ export {
     getVersionToInstall,
     downloadAndSaveJLink,
     installJLink,
-    Update as JLinkUpdate,
 } from './jlink';
+
+export type { Update as JLinkUpdate } from './update';

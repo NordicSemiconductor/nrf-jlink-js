@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-4-Clause
  */
 
-import type { Update } from './jlink';
+import type { OnUpdate } from './update';
 
 const handleFailedRequest = (response: Response, url: string) => {
     if (!response.ok) {
@@ -14,10 +14,7 @@ const handleFailedRequest = (response: Response, url: string) => {
     }
 };
 
-export const download = async (
-    url: string,
-    onUpdate?: (update: Update) => void
-) => {
+export const download = async (url: string, onUpdate?: OnUpdate) => {
     const response = await fetch(url, {
         headers: {
             Range: 'bytes=0-',
