@@ -11,7 +11,8 @@ import path from 'path';
 import semver from 'semver';
 
 import { promisify } from 'util';
-import { fetchIndex, JLinkIndex, saveToFile } from './common';
+import { fetchIndex, JLinkIndex } from './jlinkIndex';
+import { saveToFile } from './fs';
 import { download } from './net';
 import type { OnUpdate } from './update';
 

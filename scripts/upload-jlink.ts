@@ -14,11 +14,11 @@ import {
     fetchIndex,
     JLinkIndex,
     JLinkVariant,
-    saveToFile,
     ArchUrl,
     platforms,
     archs,
-} from '../src/common';
+} from '../src/jlinkIndex';
+import { saveToFile } from '../src/fs';
 
 const SEGGER_DOWNLOAD_BASE_URL = 'https://www.segger.com/downloads/jlink';
 const ARTIFACTORY_UPLOAD_BASE_URL = `https://files.nordicsemi.com/artifactory/swtools/external/ncd/jlink`;

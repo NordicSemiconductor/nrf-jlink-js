@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-4-Clause
  */
 
-import { mkdirSync, writeFileSync } from 'fs';
-import path from 'path';
 import { fetchJSON } from './net';
 
 export const platforms = ['darwin', 'linux', 'win32'] as const;
@@ -20,6 +18,7 @@ export interface JLinkIndex {
 
 export const indexUrl =
     'https://files.nordicsemi.com/ui/api/v1/download?isNativeBrowsing=true&repoKey=swtools&path=external/ncd/jlink/index.json';
+
 export const fetchIndex = async () => {
     const res = await fetchJSON<JLinkIndex>(indexUrl);
 
@@ -33,20 +32,4 @@ export const fetchIndex = async () => {
     }
 
     return res;
-};
-
-export const saveToFile = async (
-    destinationFile: string,
-    data: string | NodeJS.ArrayBufferView
-): Promise<string> => {
-    mkdirSync(path.dirname(destinationFile), { recursive: true });
-    try {
-        writeFileSync(destinationFile, data);
-    } catch (e) {
-        throw new Error(
-            `Unable to write file to ${destinationFile}. Error: ${e}`
-        );
-    }
-
-    return destinationFile;
 };
