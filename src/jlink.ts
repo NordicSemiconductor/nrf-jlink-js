@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-4-Clause
+ */
+
 import { exec, execFile, execSync } from 'child_process';
 import { existsSync } from 'fs';
 import os from 'os';
