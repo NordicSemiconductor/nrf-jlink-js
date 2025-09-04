@@ -50,14 +50,7 @@ export const download = async (url: string, onUpdate?: OnUpdate) => {
         });
     }
 
-    let chunksAll = new Uint8Array(receivedLength);
-    let position = 0;
-    chunks.forEach(chunk => {
-        chunksAll.set(chunk, position);
-        position += chunk.length;
-    });
-
-    return Buffer.from(chunksAll);
+    return Buffer.concat(chunks);
 };
 
 export const fetchJSON = async <T>(url: string): Promise<T> => {
