@@ -1,3 +1,9 @@
+## 0.10.0 - 2025-09-04
+
+### Added
+
+-   Option to turn off online check.
+
 ## 0.9.1 - 2025-08-19
 
 ### Fixed
