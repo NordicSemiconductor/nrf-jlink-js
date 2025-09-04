@@ -6,6 +6,7 @@
 
 import { mkdirSync, writeFileSync } from 'fs';
 import path from 'path';
+import { fetchJSON } from './net';
 
 export const platforms = ['darwin', 'linux', 'win32'] as const;
 export const archs = ['arm64', 'x64'] as const;
@@ -17,21 +18,7 @@ export interface JLinkIndex {
     jlinkUrls: JLinkVariant;
 }
 
-const fetchJSON = async <T>(url: string): Promise<T> => {
-    const response = await fetch(url, {
-        headers: {
-            Range: 'bytes=0-',
-        },
-    });
-    if (!response.ok) {
-        throw new Error(
-            `Unable to fetch file from ${indexUrl}. Got status code ${status}.`
-        );
-    }
-    return response.json();
-};
-
-const indexUrl =
+export const indexUrl =
     'https://files.nordicsemi.com/ui/api/v1/download?isNativeBrowsing=true&repoKey=swtools&path=external/ncd/jlink/index.json';
 export const fetchIndex = async () => {
     const res = await fetchJSON<JLinkIndex>(indexUrl);
@@ -60,5 +47,6 @@ export const saveToFile = async (
             `Unable to write file to ${destinationFile}. Error: ${e}`
         );
     }
+
     return destinationFile;
 };

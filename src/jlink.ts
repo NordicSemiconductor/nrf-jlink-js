@@ -12,6 +12,7 @@ import semver from 'semver';
 
 import { promisify } from 'util';
 import { fetchIndex, JLinkIndex, saveToFile } from './common';
+import { download } from './net';
 
 function winRegQuery(key: string): string {
     if (process.platform !== 'win32') {
@@ -89,53 +90,12 @@ const downloadJLink = async (
     if (!url) {
         throw new Error(`JLink not available for ${platform}/${arch}`);
     }
-    const response = await fetch(url, {
-        headers: {
-            Range: 'bytes=0-',
-        },
-    });
 
-    if (!response.ok) {
-        throw new Error(
-            `Unable to download ${url}. Got status code ${status}.`
-        );
-    }
+    const jlink = await download(url, onUpdate);
 
-    const hasContentLength = response.headers.has('content-length');
-    let contentLength = hasContentLength
-        ? Number(response.headers.get('content-length'))
-        : 1;
-
-    const reader = response.body?.getReader();
-    const chunks: Uint8Array[] = [];
-    let receivedLength = 0;
-    while (reader) {
-        const { done, value } = await reader.read();
-
-        if (done) {
-            break;
-        }
-
-        chunks.push(value);
-        receivedLength += value.length;
-
-        onUpdate?.({
-            step: 'download',
-            percentage: hasContentLength
-                ? Number(((receivedLength / contentLength) * 100).toFixed(2))
-                : 0,
-        });
-    }
-    let chunksAll = new Uint8Array(receivedLength);
-    let position = 0;
-    chunks.forEach(chunk => {
-        chunksAll.set(chunk, position);
-        position += chunk.length;
-    });
-
-    return await saveToFile(
+    return saveToFile(
         path.join(destinationDir, destinationFileName || path.basename(url)),
-        Buffer.from(chunksAll)
+        jlink
     );
 };
 
