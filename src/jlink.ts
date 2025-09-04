@@ -150,6 +150,7 @@ export const installJLink = (
             break;
         case 'win32':
             command = installerPath;
+            args = ['-InstUSBDriver=1'];
             break;
         default:
             throw new Error('Invalid platform');
