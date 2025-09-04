@@ -1,11 +1,11 @@
-import { spawn, execSync, execFile, ChildProcess, exec } from 'child_process';
+import { exec, execFile, execSync } from 'child_process';
+import { existsSync } from 'fs';
 import os from 'os';
 import path from 'path';
 import semver from 'semver';
-import { existsSync } from 'fs';
 
-import { fetchIndex, saveToFile, JLinkIndex } from './common';
 import { promisify } from 'util';
+import { fetchIndex, JLinkIndex, saveToFile } from './common';
 
 function winRegQuery(key: string): string {
     if (process.platform !== 'win32') {
