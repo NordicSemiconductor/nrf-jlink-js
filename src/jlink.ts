@@ -11,27 +11,28 @@ import path from 'path';
 import semver from 'semver';
 
 import { promisify } from 'util';
-import { fetchIndex, JLinkIndex } from './jlinkIndex';
+import { fetchIndex, JLinkIndex, type JLinkVariant } from './jlinkIndex';
 import { saveToFile } from './fs';
 import { download } from './net';
 import type { OnUpdate } from './update';
 
-function winRegQuery(key: string): string {
-    if (process.platform !== 'win32') {
-        throw new Error('Unsupported platform');
-    }
-
-    let reg = path.resolve(
+const reg = () => {
+    const defaultRegLocation = path.resolve(
         process.env.SystemRoot ?? 'C:\\Windows',
         'System32',
         'reg.exe'
     );
-    if (!existsSync(reg)) {
-        reg = 'reg.exe';
+
+    return existsSync(defaultRegLocation) ? defaultRegLocation : 'reg.exe';
+};
+
+const winRegQuery = (key: string): string => {
+    if (process.platform !== 'win32') {
+        throw new Error('Unsupported platform');
     }
 
-    return execSync(`${reg} query ${key}`).toString().trim();
-}
+    return execSync(`${reg()} query ${key}`).toString().trim();
+};
 
 const getJLinkExePath = (): string => {
     switch (os.platform()) {
@@ -70,12 +71,7 @@ const getInstalledJLinkVersion = async (): Promise<string> => {
     return `v${match}`;
 };
 
-const downloadJLink = async (
-    { jlinkUrls }: JLinkIndex,
-    onUpdate?: OnUpdate,
-    destinationDir: string = os.tmpdir(),
-    destinationFileName?: string
-): Promise<string> => {
+const getDownloadJLinkUrl = (jlinkUrls: JLinkVariant) => {
     const platform = os.platform();
     const arch = os.arch();
     // @ts-expect-error It is quite literally checked right before
@@ -87,6 +83,16 @@ const downloadJLink = async (
     if (!url) {
         throw new Error(`JLink not available for ${platform}/${arch}`);
     }
+    return url;
+};
+
+const downloadJLink = async (
+    { jlinkUrls }: JLinkIndex,
+    onUpdate?: OnUpdate,
+    destinationDir: string = os.tmpdir(),
+    destinationFileName?: string
+): Promise<string> => {
+    const url = getDownloadJLinkUrl(jlinkUrls);
 
     const jlink = await download(url, onUpdate);
 
