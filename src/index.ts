@@ -8,7 +8,8 @@ export {
     downloadAndInstallJLink,
     getVersionToInstall,
     downloadAndSaveJLink,
-    installJLink,
 } from './jlink';
+
+export { installJLink } from './installJLink';
 
 export type { Update as JLinkUpdate } from './update';
