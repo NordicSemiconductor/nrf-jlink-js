@@ -7,5 +7,5 @@
 export type { Update as JLinkUpdate } from './shared/update';
 
 export { downloadAndInstallJLink, downloadAndSaveJLink } from './jlink';
-export { getVersionToInstall } from './operations/getVersionToInstall';
+export { getJLinkState, type JLinkState } from './operations/getJLinkState';
 export { installJLink } from './operations/installJLink';

@@ -1,3 +1,10 @@
+## 0.12.0 - 2025-09-11
+
+### Breaking
+
+-   The new function `getJLinkState` has a different signature and replaces
+    `getVersionToInstall`.
+
 ## 0.11.0 - 2025-09-08
 
 ## Added
