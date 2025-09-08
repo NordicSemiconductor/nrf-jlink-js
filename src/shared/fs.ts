@@ -7,10 +7,10 @@
 import { mkdirSync, writeFileSync } from 'fs';
 import path from 'path';
 
-export const saveToFile = async (
+export const saveToFile = (
     destinationFile: string,
     data: string | NodeJS.ArrayBufferView
-): Promise<string> => {
+) => {
     try {
         mkdirSync(path.dirname(destinationFile), { recursive: true });
         writeFileSync(destinationFile, data);

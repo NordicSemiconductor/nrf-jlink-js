@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-4-Clause
  */
 
-import { fetchJSON } from './net';
+import { fetchJSON } from '../shared/net';
 
 export const platforms = ['darwin', 'linux', 'win32'] as const;
 export const archs = ['arm64', 'x64'] as const;

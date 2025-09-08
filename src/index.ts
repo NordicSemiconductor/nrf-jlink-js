@@ -4,12 +4,8 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-4-Clause
  */
 
-export {
-    downloadAndInstallJLink,
-    getVersionToInstall,
-    downloadAndSaveJLink,
-} from './jlink';
+export type { Update as JLinkUpdate } from './shared/update';
 
-export { installJLink } from './installJLink';
-
-export type { Update as JLinkUpdate } from './update';
+export { downloadAndInstallJLink, downloadAndSaveJLink } from './jlink';
+export { getVersionToInstall } from './operations/getVersionToInstall';
+export { installJLink } from './operations/installJLink';

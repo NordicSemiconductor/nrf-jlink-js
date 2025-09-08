@@ -6,7 +6,7 @@
 
 import { execFile } from 'child_process';
 import os from 'os';
-import type { OnUpdate } from './update';
+import type { OnUpdate } from '../shared/update';
 
 export const installJLink = (
     installerPath: string,

@@ -6,10 +6,10 @@
 
 import os from 'os';
 import path from 'path';
-import { saveToFile } from './fs';
-import { JLinkVariant, JLinkIndex } from './jlinkIndex';
-import { download } from './net';
-import { OnUpdate } from './update';
+import { saveToFile } from '../shared/fs';
+import { JLinkVariant, JLinkIndex } from './fetchIndex';
+import { download } from '../shared/net';
+import { OnUpdate } from '../shared/update';
 
 const getDownloadJLinkUrl = (jlinkUrls: JLinkVariant) => {
     const platform = os.platform();

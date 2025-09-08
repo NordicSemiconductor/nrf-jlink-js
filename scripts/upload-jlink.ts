@@ -17,8 +17,8 @@ import {
     ArchUrl,
     platforms,
     archs,
-} from '../src/jlinkIndex';
-import { saveToFile } from '../src/fs';
+} from '../src/operations/fetchIndex';
+import { saveToFile } from '../src/shared/fs';
 
 const SEGGER_DOWNLOAD_BASE_URL = 'https://www.segger.com/downloads/jlink';
 const ARTIFACTORY_UPLOAD_BASE_URL = `https://files.nordicsemi.com/artifactory/swtools/external/ncd/jlink`;
