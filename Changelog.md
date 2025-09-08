@@ -1,3 +1,9 @@
+## 0.11.0 - 2025-09-08
+
+## Added
+
+-   Windows: preselect to install the legacy drivers in installation wizard.
+
 ## 0.10.0 - 2025-09-04
 
 ### Added
