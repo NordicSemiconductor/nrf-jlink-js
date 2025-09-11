@@ -1,6 +1,7 @@
 # nrf-jlink-js
 
-`nrf-jlink-js` is a Node.js module to check and install the recommended JLink version used by some products of Nordic Semiconductor ASA.
+`nrf-jlink-js` is a Node.js module to check and install the recommended JLink
+version used by some products of Nordic Semiconductor ASA.
 
 ## Installation
 
@@ -11,9 +12,9 @@ npm install @nordicsemiconductor/nrf-jlink-js
 ## Usage
 
 ```js
-const { outdated, versionToBeInstalled } = await getVersionToInstall()
+const { status } = await getJLinkState();
 
-if (outdated) {
-    downloadAndInstallJlink(console.log)
+if (status === 'should be updated') {
+    downloadAndInstallJlink(console.log);
 }
 ```
