@@ -14,11 +14,11 @@ export const downloadAndSaveJLink = (
     destinationFileName?: string,
     onUpdate?: OnUpdate
 ) =>
-    fetchIndex().then(v =>
-        downloadJLink(v, onUpdate, destinationDir, destinationFileName)
+    fetchIndex().then(index =>
+        downloadJLink(index, onUpdate, destinationDir, destinationFileName)
     );
 
 export const downloadAndInstallJLink = (onUpdate?: OnUpdate) =>
     fetchIndex()
-        .then(v => downloadJLink(v, onUpdate))
-        .then(v => installJLink(v, onUpdate));
+        .then(index => downloadJLink(index, onUpdate))
+        .then(fileName => installJLink(fileName, onUpdate));
