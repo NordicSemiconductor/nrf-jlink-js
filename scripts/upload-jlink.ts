@@ -1,5 +1,11 @@
 #!/usr/bin/env ts-node
 
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-4-Clause
+ */
+
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
@@ -8,11 +14,11 @@ import {
     fetchIndex,
     JLinkIndex,
     JLinkVariant,
-    saveToFile,
     ArchUrl,
     platforms,
     archs,
-} from '../src/common';
+} from '../src/operations/fetchIndex';
+import { saveToFile } from '../src/shared/fs';
 
 const SEGGER_DOWNLOAD_BASE_URL = 'https://www.segger.com/downloads/jlink';
 const ARTIFACTORY_UPLOAD_BASE_URL = `https://files.nordicsemi.com/artifactory/swtools/external/ncd/jlink`;
@@ -32,13 +38,13 @@ const platformToJlinkPlatform = (variant: keyof JLinkVariant) => {
 
 const doPerVariant = async (
     variants: JLinkVariant,
-    action: (value: string) => Promise<string> | string | void,
+    action: (value: string) => Promise<string> | string | void
 ): Promise<JLinkVariant> => {
     const ret: Partial<JLinkVariant> = {};
     const promises: Promise<void>[] = [];
     for (let platform of platforms) {
         ret[platform] = Object.fromEntries(
-            archs.map(arch => [arch, '']),
+            archs.map(arch => [arch, ''])
         ) as ArchUrl;
         promises.push(
             ...archs.map(
@@ -54,8 +60,8 @@ const doPerVariant = async (
                             resolve();
                         }
                         reject();
-                    }),
-            ),
+                    })
+            )
         );
     }
     await Promise.all(promises);
@@ -63,7 +69,7 @@ const doPerVariant = async (
 };
 
 const downloadInstallers = async (
-    fileNames: JLinkVariant,
+    fileNames: JLinkVariant
 ): Promise<JLinkVariant> => {
     console.log('Started downloading all JLink variants.');
 
@@ -93,7 +99,7 @@ const downloadInstallers = async (
             } else {
                 console.log(response);
                 throw new Error(
-                    `Unable to download ${url}. Got status code ${response.status}.`,
+                    `Unable to download ${url}. Got status code ${response.status}.`
                 );
             }
         }
@@ -103,7 +109,7 @@ const downloadInstallers = async (
 
         const savedFile = await saveToFile(
             toPath,
-            Buffer.from(await response.arrayBuffer()),
+            Buffer.from(await response.arrayBuffer())
         );
 
         console.log('Finished for file:', fileName);
@@ -120,13 +126,13 @@ const downloadInstallers = async (
 };
 
 const getStandardisedVersion = (
-    rawVersion: string,
+    rawVersion: string
 ): { major: string; minor: string; patch?: string } => {
     const regex = /[vV]?(\d+)\.(\d\d)(.{0,1})/;
     const [parsedVersion, major, minor, patch] = rawVersion.match(regex) ?? [];
     if (!parsedVersion || !major || !minor) {
         throw new Error(
-            `Unable to parse version ${rawVersion}. Valid formats: v12.34, v1.23a, V1.23a, 12.34, 1.23a`,
+            `Unable to parse version ${rawVersion}. Valid formats: v12.34, v1.23a, V1.23a, 12.34, 1.23a`
         );
     }
     return {
@@ -157,10 +163,12 @@ const getFileNames = (rawVersion: string): JLinkVariant => {
         fileNames[platform] = Object.fromEntries(
             archs.map(arch => [
                 arch,
-                `JLink_${platformToJlinkPlatform(platform)}_V${version.major}${version.minor}${version.patch ?? ''}_${
+                `JLink_${platformToJlinkPlatform(platform)}_V${version.major}${
+                    version.minor
+                }${version.patch ?? ''}_${
                     arch == 'x64' ? 'x86_64' : arch
                 }.${getFileFormat(platform)}`,
-            ]),
+            ])
         ) as ArchUrl;
     }
 
@@ -169,7 +177,7 @@ const getFileNames = (rawVersion: string): JLinkVariant => {
 
 const getUpdatedSourceJson = async (
     version: string,
-    jlinkUrls: JLinkVariant,
+    jlinkUrls: JLinkVariant
 ): Promise<JLinkIndex> =>
     fetchIndex().then(index => ({ ...index, version, jlinkUrls }));
 
@@ -186,7 +194,7 @@ const uploadFile = async (url: string, data: Buffer) => {
         throw new Error(
             `Unable to upload to ${url}. Status code: ${
                 res.status
-            }. Body: ${await res.text()}`,
+            }. Body: ${await res.text()}`
         );
     }
 };
@@ -207,7 +215,7 @@ const upload = (version: string, files: JLinkVariant) => {
             console.log('Started upload:', fileName);
             await uploadFile(
                 `${ARTIFACTORY_UPLOAD_BASE_URL}/${fileName}`,
-                fs.readFileSync(filePath),
+                fs.readFileSync(filePath)
             );
             fs.rmSync(filePath);
             console.log('Finished upload:', fileName);
@@ -222,11 +230,11 @@ const upload = (version: string, files: JLinkVariant) => {
             `v${versionObject.major}.${versionObject.minor}${
                 versionObject.patch || ''
             }`,
-            jlinkUrls,
+            jlinkUrls
         );
         await uploadFile(
             targetUrl,
-            Buffer.from(JSON.stringify(updatedIndexJSON, null, 2)),
+            Buffer.from(JSON.stringify(updatedIndexJSON, null, 2))
         );
         console.log('Finished uploading Index');
 
@@ -236,7 +244,7 @@ const upload = (version: string, files: JLinkVariant) => {
 
 const main = async (version: string) => {
     await downloadInstallers(getFileNames(version)).then(files =>
-        upload(version, files),
+        upload(version, files)
     );
 };
 
