@@ -22,7 +22,7 @@ export const downloadAndSaveJLink = async (
         destinationFileName
     );
 
-    return fileName;
+    return { version: index.version, fileName };
 };
 
 export const downloadAndInstallJLink = (onUpdate?: OnUpdate) =>

@@ -1,3 +1,10 @@
+## 0.13.0 - 2025-09-11
+
+### Breaking
+
+-   `downloadAndSaveJLink` no longer returns the file name but instead an object
+    with the file name and the version of the downloaded J-Link.
+
 ## 0.12.0 - 2025-09-11
 
 ### Breaking
