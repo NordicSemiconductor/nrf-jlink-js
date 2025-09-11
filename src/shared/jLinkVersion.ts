@@ -10,6 +10,7 @@ import os from 'os';
 import path from 'path';
 import semver from 'semver';
 import { promisify } from 'util';
+import { createTemporaryScriptFile } from './fs';
 
 const reg = () => {
     const defaultRegLocation = path.resolve(
@@ -73,8 +74,10 @@ export const isValidVersion = (
     );
 
 export const getInstalledJLinkVersion = async (): Promise<string> => {
+    using scriptFile = createTemporaryScriptFile('Exit');
+
     const output = await promisify(exec)(
-        `${getJLinkExePath()} -CommandFile foo`
+        `${getJLinkExePath()} -CommandFile ${scriptFile.filePath}`
     ).catch(e => e);
 
     const versionRegExp = /^SEGGER J-Link Commander V([0-9a-z.]+) .*$/m;

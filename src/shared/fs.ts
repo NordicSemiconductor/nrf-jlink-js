@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-4-Clause
  */
 
-import { mkdirSync, writeFileSync } from 'fs';
+import { mkdirSync, writeFileSync, mkdtempSync, rmSync } from 'fs';
+import { tmpdir } from 'os';
 import path from 'path';
 
 export const saveToFile = (
@@ -21,4 +22,19 @@ export const saveToFile = (
     }
 
     return destinationFile;
+};
+
+export const createTemporaryScriptFile = (content: string) => {
+    const tmpDir = mkdtempSync(path.join(tmpdir(), 'jlink-'));
+
+    const filePath = path.join(tmpDir, 'script');
+
+    writeFileSync(filePath, content);
+
+    return {
+        filePath,
+        [Symbol.dispose]: () => {
+            rmSync(tmpDir, { recursive: true, force: true });
+        },
+    };
 };
