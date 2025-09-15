@@ -10,6 +10,7 @@
         "semver": "^7.7.2"
     },
     "scripts": {
+        "prepare": "npm run build",
         "build": "tsc",
         "upload-jlink": "ts-node scripts/upload-jlink.ts"
     },
