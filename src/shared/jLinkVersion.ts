@@ -73,11 +73,22 @@ export const isValidVersion = (
         convertToSemverVersion(expectedVersion)
     );
 
+const getEnv = () => {
+    if (process.platform !== 'darwin') return undefined;
+
+    return {
+        ...process.env,
+        PATH: `${process.env.PATH}:/usr/local/bin`
+    };
+}
+
 export const getInstalledJLinkVersion = async (): Promise<string> => {
     using scriptFile = createTemporaryScriptFile('Exit');
 
     const output = await promisify(exec)(
-        `${getJLinkExePath()} -CommandFile ${scriptFile.filePath}`
+        `${getJLinkExePath()} -CommandFile ${scriptFile.filePath}`, {
+            env: getEnv()
+    }
     ).catch(e => e);
 
     const versionRegExp = /^SEGGER J-Link Commander V([0-9a-z.]+) .*$/m;
