@@ -1,3 +1,12 @@
+## 0.13.1 - 2025-09-15
+
+### Fixed
+
+-   On macOS `/usr/local/bin` is not in `$PATH` by default but this is where
+    `JLinkExe` is placed by the SEGGER J-Link installer. Even if one configures
+    shells to include `/usr/local/bin` in `$PATH`, that usually doesn't take
+    effect for GUI apps, so we must add it manually.
+
 ## 0.13.0 - 2025-09-11
 
 ### Breaking
