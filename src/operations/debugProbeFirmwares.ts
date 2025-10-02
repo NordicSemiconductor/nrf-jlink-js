@@ -56,17 +56,16 @@ export const getHostFirmwareVersions = (jlinkDir: string): HostFirmwares => {
  * Returns whether a debug probe firmware update is available for the given device
  * based on the host firmware versions.
  *
- * @param device The connected debug probe device as the device element returned by
+ * @param jlinkObFirmwareVersion The connected debug probe firmware version as returned by
  *         `nrfutil --json --skip-overhead device device-info --serial-number ${serialNumber}`
  * @param hostFirmwares The host firmware versions as returned by `getHostFirmwareVersions`
  * @returns `true` if an update is available, `false` if not, or `undefined` if the
  *          information is insufficient to determine this.
  */
 export const isDebugProbeFirmwareUpdateAvailable = (
-    device: NrfUtilDevice,
+    jlinkObFirmwareVersion: string,
     hostFirmwares: HostFirmwares
 ): boolean | undefined => {
-    const { jlinkObFirmwareVersion } = device.deviceInfo.jlink;
     const [deviceObFirmwareId, deviceObFirmwareDateStr] =
         jlinkObFirmwareVersion.split(' compiled ');
 
