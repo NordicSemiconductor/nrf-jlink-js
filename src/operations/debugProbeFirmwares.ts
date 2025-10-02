@@ -28,9 +28,9 @@ export const getHostFirmwareVersions = (jlinkDir: string): HostFirmwares => {
     const buffer = Buffer.alloc(64);
 
     return Object.fromEntries(
-        readdirSync(jlinkDir)
+        readdirSync(join(jlinkDir, 'Firmwares'))
             .map(file => {
-                const filePath = join(jlinkDir, file);
+                const filePath = join(jlinkDir, 'Firmwares', file);
                 const fd = openSync(filePath, 'r');
                 readSync(fd, buffer, 0, buffer.length, 0);
                 const [id, dateStr] = buffer
