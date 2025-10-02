@@ -9,3 +9,7 @@ export type { Update as JLinkUpdate } from './shared/update';
 export { downloadAndInstallJLink, downloadAndSaveJLink } from './jlink';
 export { getJLinkState, type JLinkState } from './operations/getJLinkState';
 export { installJLink } from './operations/installJLink';
+export {
+    getHostFirmwareVersions,
+    isDebugProbeFirmwareUpdateAvailable,
+} from './operations/debugProbeFirmwares';
