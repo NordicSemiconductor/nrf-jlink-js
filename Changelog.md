@@ -1,3 +1,12 @@
+## 0.14.0 - 2025-10-02
+
+### Added
+
+-   `getHostFirmwareVersions` to extract available debug probe firmware
+    information from a given JLink installation
+-   `isDebugProbeFirmwareUpdateAvailable` to check whether a newer firmware is
+    available for a given debug probe
+
 ## 0.13.1 - 2025-09-15
 
 ### Fixed
