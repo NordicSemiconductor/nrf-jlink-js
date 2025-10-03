@@ -16,10 +16,6 @@ interface HostFirmwares {
     [key: string]: HostFirmwareInfo;
 }
 
-interface NrfUtilDevice {
-    deviceInfo: { jlink: { jlinkObFirmwareVersion: string } };
-}
-
 /**
  * Reads the debug probe firmware files in the given JLink directory and returns
  * a map of their IDs and compilation dates.
