@@ -1,3 +1,10 @@
+## 0.14.1 - 2026-02-04
+
+### Fixed
+
+-   Fixed an issue with handling missing registry entries on Windows when
+    looking for J-Link installation path.
+
 ## 0.14.0 - 2025-10-02
 
 ### Added

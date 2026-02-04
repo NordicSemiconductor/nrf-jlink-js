@@ -22,12 +22,14 @@ const reg = () => {
     return existsSync(defaultRegLocation) ? defaultRegLocation : 'reg.exe';
 };
 
-const winRegQuery = (key: string): string => {
+const winRegQuery = (key: string): string | undefined => {
     if (process.platform !== 'win32') {
         throw new Error('Unsupported platform');
     }
 
-    return execSync(`${reg()} query ${key}`).toString().trim();
+    try {
+        return execSync(`${reg()} query ${key}`).toString().trim();
+    } catch {}
 };
 
 const getJLinkExePath = (): string => {
@@ -41,7 +43,9 @@ const getJLinkExePath = (): string => {
                     'HKEY_LOCAL_MACHINE\\Software\\SEGGER\\J-Link /v InstallPath'
                 );
             }
-            cwd = (/InstallPath\s+\w+\s+(.*)/.exec(cwd) ?? [])[1];
+            cwd = cwd
+                ? (/InstallPath\s+\w+\s+(.*)/.exec(cwd) ?? [])[1]
+                : undefined;
             if (!cwd) {
                 throw new Error('JLink not installed');
             }
