@@ -7,8 +7,10 @@
 import { execFile } from 'child_process';
 import os from 'os';
 import type { OnUpdate } from '../shared/update';
+import { installJLinkWindows } from './installJLinkWindows';
+import { promisify } from 'util';
 
-export const installJLink = (
+export const installJLink = async (
     installerPath: string,
     onUpdate?: OnUpdate
 ): Promise<void> => {
@@ -33,16 +35,11 @@ export const installJLink = (
 
     onUpdate?.({ step: 'install', percentage: 0 });
 
-    return new Promise((resolve, reject) => {
-        execFile(command, args, (error, _, stderr) => {
-            if (error) {
-                return reject(error);
-            }
-            if (stderr) {
-                return reject(stderr);
-            }
-            onUpdate?.({ step: 'install', percentage: 100 });
-            return resolve();
-        });
-    });
+    if (os.platform() === 'win32') {
+        await installJLinkWindows(command, args);
+    } else {
+        const stderr = await promisify(execFile)(command, args);
+        if (stderr) throw stderr;
+    }
+    onUpdate?.({ step: 'install', percentage: 100 });
 };
