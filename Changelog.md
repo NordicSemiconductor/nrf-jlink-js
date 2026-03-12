@@ -1,3 +1,9 @@
+## 0.15.0 - 2026-03-12
+
+### Changed
+
+-   Completed install is now detected by polling for the process on windows.
+
 ## 0.14.1 - 2026-02-04
 
 ### Fixed
