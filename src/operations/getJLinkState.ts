@@ -60,9 +60,8 @@ export const getJLinkState = async ({
         return { status: 'not installed', versionToBeInstalled };
     }
 
-    /* If `versionToBeInstalled` is undefined we do not really know but at
-    least there is some J-Link installed and we do not know that it is
-    outdated. So, we return 'up to date', but this may be changed to a
+    /* If `versionToBeInstalled` is undefined we do not really know that it is outdated but at
+    least there is some J-Link installed. So, we return 'up to date', but this may be changed to a
     fifth state "installed, unknown if up-to-date" if we see the need for
     this in the future. */
     if (
