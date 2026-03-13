@@ -80,7 +80,7 @@ const pollForProcess = async (processRegex: RegExp, knownProcesses: Process[]): 
         throw new Error('No JLink processes found after starting installer.');
     }
     if (!process) {
-        throw new Error(`Installer process not found. JLink processes running: ${otherProcesses.map(p => `${p.name} (${p.pid})`).join(', ')}`);
+        throw new Error(`Installer process not found.${otherProcesses.length !== 0 ? ` Other JLink processes running: ${otherProcesses.map(p => `${p.name} (${p.pid})`).join(', ')}` : '' }`);
     }
 
     return process;
