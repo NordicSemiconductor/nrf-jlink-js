@@ -20,7 +20,7 @@ export const installJLinkWindows = async (cmd: string, args: string[]) => {
 
     // InitialInstaller
     execFile(cmd, args);
-    const initialInstallerProcess = await pollForProcess(/JLink_Windows_V\d+[a-z]?_x86_64/, processesBefore);
+    const initialInstallerProcess = await pollForProcess(/JLink_Windows_V\d+[a-z]?_/, processesBefore);
     await waitForProcessToFinish(initialInstallerProcess);
 
 
@@ -65,9 +65,7 @@ const pollForProcess = async (processRegex: RegExp, knownProcesses: Process[]): 
     while (!process && timeout > 0) {
         otherProcesses = await findJLinkProcesses();
 
-
         process = otherProcesses.filter(p => !knownProcesses.some(kb => kb.pid === p.pid)).find(p => processRegex.test(p.name));
-        
 
         timeout -= 3000;
         if (timeout <= 0) {
