@@ -86,6 +86,9 @@ const pollForProcess = async (processRegex: RegExp, knownProcesses: Process[]): 
 
 const findJLinkProcesses = async (): Promise<Process[]> => {
     const { stdout } = await promisify(execFile)('tasklist', [ '/NH', '/FI', 'IMAGENAME eq JLink*', ]);
+    if (stdout.startsWith('INFO: No tasks are running')) {
+        return [];
+    }
     return stdout
         .split(EOL)
         .filter(Boolean)
