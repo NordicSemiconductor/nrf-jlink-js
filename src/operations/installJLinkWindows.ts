@@ -20,7 +20,7 @@ export const installJLinkWindows = async (cmd: string, args: string[]) => {
 
     // InitialInstaller
     execFile(cmd, args);
-    const initialInstallerProcess = await pollForProcess(/JLink_Windows_V\d+_x86_64/, processesBefore);
+    const initialInstallerProcess = await pollForProcess(/JLink_Windows_V\d+[a-z]?_/, processesBefore);
     await waitForProcessToFinish(initialInstallerProcess);
 
 
@@ -65,9 +65,7 @@ const pollForProcess = async (processRegex: RegExp, knownProcesses: Process[]): 
     while (!process && timeout > 0) {
         otherProcesses = await findJLinkProcesses();
 
-
         process = otherProcesses.filter(p => !knownProcesses.some(kb => kb.pid === p.pid)).find(p => processRegex.test(p.name));
-        
 
         timeout -= 3000;
         if (timeout <= 0) {
@@ -80,7 +78,7 @@ const pollForProcess = async (processRegex: RegExp, knownProcesses: Process[]): 
         throw new Error('No JLink processes found after starting installer.');
     }
     if (!process) {
-        throw new Error(`Installer process not found. JLink processes running: ${otherProcesses.map(p => `${p.name} (${p.pid})`).join(', ')}`);
+        throw new Error(`Installer process not found.${otherProcesses.length !== 0 ? ` Other JLink processes running: ${otherProcesses.map(p => `${p.name} (${p.pid})`).join(', ')}` : '' }`);
     }
 
     return process;
@@ -88,6 +86,9 @@ const pollForProcess = async (processRegex: RegExp, knownProcesses: Process[]): 
 
 const findJLinkProcesses = async (): Promise<Process[]> => {
     const { stdout } = await promisify(execFile)('tasklist', [ '/NH', '/FI', 'IMAGENAME eq JLink*', ]);
+    if (stdout.startsWith('INFO: No tasks are running')) {
+        return [];
+    }
     return stdout
         .split(EOL)
         .filter(Boolean)

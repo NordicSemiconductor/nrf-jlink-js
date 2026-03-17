@@ -1,3 +1,12 @@
+## 0.15.1 - 2026-03-17
+
+### Fixed
+
+-   Windows: Handle case when no processes are detected during install.
+-   Windows: regex for detecting JLink install did not expect trucated value.
+-   Windows: regex for detecting JLink install did not handle patch version.
+-   Some errors were passed incorrect values.
+
 ## 0.15.0 - 2026-03-12
 
 ### Changed

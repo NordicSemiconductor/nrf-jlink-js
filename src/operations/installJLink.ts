@@ -38,8 +38,8 @@ export const installJLink = async (
     if (os.platform() === 'win32') {
         await installJLinkWindows(command, args);
     } else {
-        const stderr = await promisify(execFile)(command, args);
-        if (stderr) throw stderr;
+        const output = await promisify(execFile)(command, args);
+        if (output.stderr) throw output.stderr;
     }
     onUpdate?.({ step: 'install', percentage: 100 });
 };
