@@ -20,7 +20,7 @@ export const installJLinkWindows = async (cmd: string, args: string[]) => {
 
     // InitialInstaller
     execFile(cmd, args);
-    const initialInstallerProcess = await pollForProcess(/JLink_Windows_V\d+_x86_64/, processesBefore);
+    const initialInstallerProcess = await pollForProcess(/JLink_Windows_V\d+[a-z]?_x86_64/, processesBefore);
     await waitForProcessToFinish(initialInstallerProcess);
 
 
