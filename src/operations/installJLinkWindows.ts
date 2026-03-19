@@ -20,23 +20,28 @@ export const installJLinkWindows = async (cmd: string, args: string[]) => {
 
     // InitialInstaller
     execFile(cmd, args);
-    const initialInstallerProcess = await pollForProcess(/JLink_Windows_V\d+[a-z]?_/, processesBefore);
-    await waitForProcessToFinish(initialInstallerProcess);
+    const initialInstallerProcess = await poll(() => findProcess(/JLink_Windows_V\d+[a-z]?_/, processesBefore), 10000)
+    if (!initialInstallerProcess) {
+        throw new Error('JLink installer process not found after executing it.');
+    }
+    await poll(async () => !(await isProcessStillRunning(initialInstallerProcess)))
+
 
 
     // Elevated installer
-    const elevatedInstallerProcess = await pollForProcess(/JLink_Windows/, processesBefore).catch(() => {
-        // Maybe installer did not need to elevate or user did not install for all users
-        // We can check compare installed JLink version instead of throwing here immediately
-    });
-    if (!elevatedInstallerProcess) {
-        const currentInstalledJLink = await getInstalledJLinkVersion();
-        if (currentInstalledJLink && currentInstalledJLink !== installedJLink) {
-            return;
-        }
-        throw new Error('Elevated installer process not found after initial installer finished.');
+    const res = await poll(async () => {
+        const process = await findProcess(/JLink_Windows/, processesBefore);
+        if (process) return process;
+        // If process is not found but JLink version is updated, it likely is due to single user installation
+        if (await isJLinkVersionUpdated(installedJLink)) return true;
+    }, 10000)
+    if (!res) {
+        throw new Error('Elevated JLink installer process not found after executing it.');
+    } else if (typeof res === 'boolean' && !!res) {
+        // JLink version updated without elevated installer, likely due to user already having admin privileges
+        return;
     }
-    await waitForProcessToFinish(elevatedInstallerProcess);
+    await waitForProcessToFinish(res);
 
     // Check if JLink version is updated after installation
     const currentInstalledJLink = await getInstalledJLinkVersion();
@@ -59,30 +64,33 @@ const waitForProcessToFinish = async (installerProcess: Process): Promise<void> 
     }
 }
 
-const pollForProcess = async (processRegex: RegExp, knownProcesses: Process[]): Promise<Process> => {
-    let process: Process | undefined;
-    let otherProcesses: Process[] = [];
-    let timeout = 10000;
-    let interval = 500;
-    while (!process && timeout > 0) {
-        otherProcesses = await findJLinkProcesses();
+const findProcess = async (processRegex: RegExp, knownProcesses: Process[]): Promise<Process | undefined> => {
+    const otherProcesses = await findJLinkProcesses();
+    return otherProcesses.filter(p => !knownProcesses.some(kb => kb.pid === p.pid)).find(p => processRegex.test(p.name));
+}
 
-        process = otherProcesses.filter(p => !knownProcesses.some(kb => kb.pid === p.pid)).find(p => processRegex.test(p.name));
+const isProcessStillRunning = async (process: Process): Promise<boolean> => {
+    const processes = await findJLinkProcesses();
+    return !!processes.some(p => p.pid === process.pid);
+}
 
-        timeout -= interval;
-        if (timeout <= 0) {
+const isJLinkVersionUpdated = async (previousVersion: string | undefined): Promise<boolean> => {
+    const currentInstalledJLink = await getInstalledJLinkVersion();
+    return !!(currentInstalledJLink && currentInstalledJLink !== previousVersion);
+}
+
+const poll = async <T>(condition: () => Promise<T>, timeout?: number, checkInterval = 500): Promise<T | undefined> => {
+    const start = Date.now();
+    while (true) {
+        const result = await condition();
+        if (!!result) {
+            return result;
+        }
+        await wait(checkInterval);
+        if (timeout && Date.now() - start >= timeout) {
             break;
         }
-        await wait(interval);
     }
-    if (otherProcesses.length === 0) {
-        throw new Error('No JLink processes found after starting installer.');
-    }
-    if (!process) {
-        throw new Error(`Installer process not found.${otherProcesses.length !== 0 ? ` Other JLink processes running: ${otherProcesses.map(p => `${p.name} (${p.pid})`).join(', ')}` : '' }`);
-    }
-
-    return process;
 }
 
 const findJLinkProcesses = async (): Promise<Process[]> => {
