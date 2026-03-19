@@ -51,8 +51,9 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const waitForProcessToFinish = async (installerProcess: Process): Promise<void> => {
     let installerProcessRunning = true;
+    let interval = 500;
     while (installerProcessRunning) {
-        await wait(3000); // Wait for 3 seconds before checking again
+        await wait(interval);
         const processes = await findJLinkProcesses();
         installerProcessRunning = processes.some(p => p.pid === installerProcess.pid);
     }
@@ -62,17 +63,17 @@ const pollForProcess = async (processRegex: RegExp, knownProcesses: Process[]): 
     let process: Process | undefined;
     let otherProcesses: Process[] = [];
     let timeout = 10000;
+    let interval = 500;
     while (!process && timeout > 0) {
         otherProcesses = await findJLinkProcesses();
 
         process = otherProcesses.filter(p => !knownProcesses.some(kb => kb.pid === p.pid)).find(p => processRegex.test(p.name));
 
-        timeout -= 3000;
+        timeout -= interval;
         if (timeout <= 0) {
             break;
         }
-        // update Timeout if passed
-        await wait(3000); // Wait for 3 seconds before checking again
+        await wait(interval);
     }
     if (otherProcesses.length === 0) {
         throw new Error('No JLink processes found after starting installer.');
