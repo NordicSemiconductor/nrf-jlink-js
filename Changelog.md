@@ -1,3 +1,11 @@
+## 0.17.0 - 2026-03-26
+
+### Added
+
+-   `downloadJLinkByVersion` to download a certain version of the J-Link installer
+    for the current platform, which is not necessarily the latest one (which is
+    what `downloadAndSaveJLink` would do).
+
 ## 0.16.0 - 2026-03-26
 
 ## Added
