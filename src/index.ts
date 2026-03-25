@@ -13,3 +13,4 @@ export {
     getHostFirmwareVersions,
     isDebugProbeFirmwareUpdateAvailable,
 } from './operations/debugProbeFirmwares';
+export { downloadJLinkByVersion } from './operations/downloadJLink';

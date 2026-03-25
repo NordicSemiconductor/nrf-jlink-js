@@ -6,7 +6,7 @@
 
 import { fetchIndex } from './operations/fetchIndex';
 import type { OnUpdate } from './shared/update';
-import { downloadJLink } from './operations/downloadJLink';
+import { downloadCurrentJLink } from './operations/downloadJLink';
 import { installJLink } from './operations/installJLink';
 
 export const downloadAndSaveJLink = async (
@@ -15,7 +15,7 @@ export const downloadAndSaveJLink = async (
     onUpdate?: OnUpdate
 ) => {
     const index = await fetchIndex();
-    const fileName = await downloadJLink(
+    const fileName = await downloadCurrentJLink(
         index,
         onUpdate,
         destinationDir,
@@ -27,5 +27,5 @@ export const downloadAndSaveJLink = async (
 
 export const downloadAndInstallJLink = (onUpdate?: OnUpdate) =>
     fetchIndex()
-        .then(index => downloadJLink(index, onUpdate))
+        .then(index => downloadCurrentJLink(index, onUpdate))
         .then(fileName => installJLink(fileName, onUpdate));

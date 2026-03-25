@@ -7,8 +7,9 @@
 import os from 'os';
 import path from 'path';
 import { saveToFile } from '../shared/fs';
+import getInstallerFileName from '../shared/installerFileName';
 import { JLinkVariant, JLinkIndex } from './fetchIndex';
-import { download } from '../shared/net';
+import { ARTIFACTORY_BASE_DOWNLOAD_URL, download } from '../shared/net';
 import { OnUpdate } from '../shared/update';
 
 const getDownloadJLinkUrl = (jlinkUrls: JLinkVariant) => {
@@ -28,17 +29,38 @@ const getDownloadJLinkUrl = (jlinkUrls: JLinkVariant) => {
     return url;
 };
 
-export const downloadJLink = async (
-    { jlinkUrls }: JLinkIndex,
+const downloadJLinkFromUrl = async (
+    url: string,
+    destinationDir = os.tmpdir(),
+    destinationFileName?: string,
     onUpdate?: OnUpdate,
-    destinationDir: string = os.tmpdir(),
-    destinationFileName?: string
-): Promise<string> => {
-    const url = getDownloadJLinkUrl(jlinkUrls);
+) => {
     const jlink = await download(url, onUpdate);
 
     return saveToFile(
         path.join(destinationDir, destinationFileName || path.basename(url)),
-        jlink
+        jlink,
     );
 };
+
+export const downloadJLinkByVersion = (
+    version: string,
+    destinationDir: string,
+) =>
+    downloadJLinkFromUrl(
+        `${ARTIFACTORY_BASE_DOWNLOAD_URL}/${getInstallerFileName(version)}`,
+        destinationDir,
+    );
+
+export const downloadCurrentJLink = (
+    { jlinkUrls }: JLinkIndex,
+    onUpdate?: OnUpdate,
+    destinationDir?: string,
+    destinationFileName?: string
+) =>
+    downloadJLinkFromUrl(
+        getDownloadJLinkUrl(jlinkUrls),
+        destinationDir,
+        destinationFileName,
+        onUpdate,
+    );
