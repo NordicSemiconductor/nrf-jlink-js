@@ -19,22 +19,13 @@ import {
     archs,
 } from '../src/operations/fetchIndex';
 import { saveToFile } from '../src/shared/fs';
+import getInstallerFileName from '../src/shared/installerFileName';
+import { getStandardisedVersion } from '../src/shared/jLinkVersion';
+import { ARTIFACTORY_BASE_DOWNLOAD_URL } from '../src/shared/net';
 
 const SEGGER_DOWNLOAD_BASE_URL = 'https://www.segger.com/downloads/jlink';
 const ARTIFACTORY_UPLOAD_BASE_URL = `https://files.nordicsemi.com/artifactory/swtools/external/ncd/jlink`;
 
-const platformToJlinkPlatform = (variant: keyof JLinkVariant) => {
-    switch (variant) {
-        case 'win32':
-            return 'Windows';
-        case 'linux':
-            return 'Linux';
-        case 'darwin':
-            return 'MacOSX';
-        default:
-            throw new Error(`Unknown variant ${variant}`);
-    }
-};
 
 const doPerVariant = async (
     variants: JLinkVariant,
@@ -125,55 +116,18 @@ const downloadInstallers = async (
     return ret;
 };
 
-const getStandardisedVersion = (
-    rawVersion: string
-): { major: string; minor: string; patch?: string } => {
-    const regex = /[vV]?(\d+)\.(\d\d)(.{0,1})/;
-    const [parsedVersion, major, minor, patch] = rawVersion.match(regex) ?? [];
-    if (!parsedVersion || !major || !minor) {
-        throw new Error(
-            `Unable to parse version ${rawVersion}. Valid formats: v12.34, v1.23a, V1.23a, 12.34, 1.23a`
-        );
-    }
-    return {
-        major,
-        minor,
-        patch: patch?.toLowerCase(),
-    };
-};
-
-const getFileFormat = (platform: string) => {
-    switch (platform) {
-        case 'win32':
-            return 'exe';
-        case 'darwin':
-            return 'pkg';
-        case 'linux':
-            return 'deb';
-        default:
-            throw new Error(`Unknown platform ${process.platform}`);
-    }
-};
-
-const getFileNames = (rawVersion: string): JLinkVariant => {
-    const version = getStandardisedVersion(rawVersion);
-
-    let fileNames: Partial<JLinkVariant> = {};
-    for (let platform of platforms) {
-        fileNames[platform] = Object.fromEntries(
-            archs.map(arch => [
-                arch,
-                `JLink_${platformToJlinkPlatform(platform)}_V${version.major}${
-                    version.minor
-                }${version.patch ?? ''}_${
-                    arch == 'x64' ? 'x86_64' : arch
-                }.${getFileFormat(platform)}`,
-            ])
-        ) as ArchUrl;
-    }
-
-    return fileNames as JLinkVariant;
-};
+const getFileNames = (version: string): JLinkVariant =>
+    Object.fromEntries(
+        platforms.map(platform => [
+            platform,
+            Object.fromEntries(
+                archs.map(arch => [
+                    arch,
+                    getInstallerFileName(version, platform, arch),
+                ]),
+            ),
+        ]),
+    ) as JLinkVariant;
 
 const getUpdatedSourceJson = async (
     version: string,
@@ -199,8 +153,6 @@ const uploadFile = async (url: string, data: Buffer) => {
     }
 };
 
-const ARTIFACTORY_BASE_DOWNLOAD_URL =
-    'https://files.nordicsemi.com/ui/api/v1/download?isNativeBrowsing=true&repoKey=swtools&path=external/ncd/jlink';
 const upload = (version: string, files: JLinkVariant) => {
     if (!process.env.ARTIFACTORY_TOKEN) {
         throw new Error('ARTIFACTORY_TOKEN environment variable not set');

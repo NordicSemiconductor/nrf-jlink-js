@@ -6,6 +6,9 @@
 
 import type { OnUpdate } from './update';
 
+export const ARTIFACTORY_BASE_DOWNLOAD_URL =
+    'https://files.nordicsemi.com/ui/api/v1/download?isNativeBrowsing=true&repoKey=swtools&path=external/ncd/jlink';
+
 const handleFailedRequest = (response: Response, url: string) => {
     if (!response.ok) {
         throw new Error(

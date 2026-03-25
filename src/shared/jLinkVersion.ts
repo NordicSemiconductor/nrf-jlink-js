@@ -102,3 +102,20 @@ export const getInstalledJLinkVersion = async (): Promise<string> => {
     }
     return `v${match}`;
 };
+
+export const getStandardisedVersion = (
+    rawVersion: string,
+): { major: string; minor: string; patch?: string } => {
+    const regex = /[vV]?(\d+)\.(\d\d)(.{0,1})/;
+    const [parsedVersion, major, minor, patch] = rawVersion.match(regex) ?? [];
+    if (!parsedVersion || !major || !minor) {
+        throw new Error(
+            `Unable to parse version ${rawVersion}. Valid formats: v12.34, v1.23a, V1.23a, 12.34, 1.23a`,
+        );
+    }
+    return {
+        major,
+        minor,
+        patch: patch?.toLowerCase(),
+    };
+};
