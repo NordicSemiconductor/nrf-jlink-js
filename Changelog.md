@@ -1,3 +1,9 @@
+## 1.0.0 - 2026-03-27
+
+### Changed
+
+-   Only bumped the version to indicate that this is ready for production.
+
 ## 0.17.0 - 2026-03-26
 
 ### Added
