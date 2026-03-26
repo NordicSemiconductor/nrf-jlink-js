@@ -1,3 +1,16 @@
-import Jlink from "./jlink";
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-4-Clause
+ */
 
-export default Jlink;
+export type { Update as JLinkUpdate } from './shared/update';
+
+export { downloadAndInstallJLink, downloadAndSaveJLink } from './jlink';
+export { getJLinkState, type JLinkState } from './operations/getJLinkState';
+export { installJLink } from './operations/installJLink';
+export {
+    getHostFirmwareVersions,
+    isDebugProbeFirmwareUpdateAvailable,
+} from './operations/debugProbeFirmwares';
+export { downloadJLinkByVersion } from './operations/downloadJLink';

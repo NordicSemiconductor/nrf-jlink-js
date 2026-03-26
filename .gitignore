@@ -1,4 +1,5 @@
 dist/
 node_modules/
+nordicsemiconductor-nrf-jlink-js-*.tgz
 
 .DS_Store
