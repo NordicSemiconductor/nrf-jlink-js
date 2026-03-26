@@ -1,3 +1,9 @@
+## 0.16.0 - 2026-03-26
+
+## Added
+
+-   Windows: Improved detection speed of succesful install.
+
 ## 0.15.1 - 2026-03-17
 
 ### Fixed
