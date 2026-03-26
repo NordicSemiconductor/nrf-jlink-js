@@ -30,7 +30,7 @@ export const installJLinkWindows = async (cmd: string, args: string[]) => {
 
     // Elevated installer
     const res = await poll(async () => {
-        const process = await findProcess(/JLink_Windows/, processesBefore);
+        const process = await findProcess(/JLink_Windows.exe/, processesBefore);
         if (process) return process;
         // If process is not found but JLink version is updated, it likely is due to single user installation
         if (await isJLinkVersionUpdated(installedJLink)) return true;
