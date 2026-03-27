@@ -8,9 +8,9 @@
 
 ## 0.16.0 - 2026-03-26
 
-## Added
+### Added
 
--   Windows: Improved detection speed of succesful install.
+-   Windows: Improved detection speed of successful install.
 
 ## 0.15.1 - 2026-03-17
 
@@ -68,7 +68,7 @@
 
 ## 0.11.0 - 2025-09-08
 
-## Added
+### Added
 
 -   Windows: preselect to install the legacy drivers in installation wizard.
 
